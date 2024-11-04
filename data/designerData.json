@@ -1,0 +1,87 @@
+[
+  {
+    "id": 1,
+    "userId": 3,
+    "pictures": [
+      "https://i.pinimg.com/564x/44/dd/7a/44dd7ae1415a0bd5891910a0fac0260c.jpg",
+      "https://i.pinimg.com/564x/f4/1c/9a/f41c9a84be1d7c26a939438047bc6c19.jpg",
+      "https://i.pinimg.com/564x/b0/c5/c7/b0c5c7ca390b9e6efa4a47c191f58093.jpg",
+      "https://i.pinimg.com/736x/fb/d2/fd/fbd2fda483c9f5246e55bf452736a774.jpg"
+    ],
+    "startPrice": 5000,
+    "customizations": [
+      {
+        "option": "Fabric Type",
+        "choices": [
+          { "name": "Cotton", "price": 500 },
+          { "name": "Silk", "price": 1500 },
+          { "name": "Linen", "price": 1000 },
+          { "name": "Chiffon", "price": 700 },
+          { "name": "Georgette", "price": 1200 },
+          { "name": "Velvet", "price": 2000 }
+        ]
+      },
+      {
+        "option": "Color",
+        "choices": [
+          { "name": "Red", "price": 0 },
+          { "name": "Blue", "price": 0 },
+          { "name": "Black", "price": 0 },
+          { "name": "White", "price": 0 },
+          { "name": "Green", "price": 0 },
+          { "name": "Purple", "price": 0 },
+          { "name": "Custom Color", "price": 350 }
+        ]
+      },
+      {
+        "option": "Embroidery",
+        "choices": [
+          { "name": "None", "price": 0 },
+          { "name": "Light", "price": 800 },
+          { "name": "Heavy", "price": 1500 },
+          { "name": "Medium", "price": 1000 },
+          { "name": "Extensive", "price": 1800 }
+        ]
+      },
+      {
+        "option": "Neckline Style",
+        "choices": [
+          { "name": "Round", "price": 200 },
+          { "name": "V-neck", "price": 250 },
+          { "name": "Square", "price": 300 },
+          { "name": "Boat Neck", "price": 250 },
+          { "name": "Sweetheart", "price": 300 },
+          { "name": "Halter", "price": 350 }
+        ]
+      },
+      {
+        "option": "Sleeve Length",
+        "choices": [
+          { "name": "Sleeveless", "price": 0 },
+          { "name": "Short Sleeves", "price": 200 },
+          { "name": "Long Sleeves", "price": 400 },
+          { "name": "Three-Quarter Sleeves", "price": 300 },
+          { "name": "Full Sleeves", "price": 500 }
+        ]
+      },
+      {
+        "option": "Hemline Style",
+        "choices": [
+          { "name": "Straight", "price": 0 },
+          { "name": "Asymmetrical", "price": 300 },
+          { "name": "High-Low", "price": 500 },
+          { "name": "Flared", "price": 400 },
+          { "name": "Ruffled", "price": 600 }
+        ]
+      },
+      {
+        "option": "Personalization",
+        "choices": [
+          { "name": "None", "price": 0 },
+          { "name": "Monogram", "price": 250 },
+          { "name": "Initials", "price": 200 }
+        ]
+      }
+    ]
+  }
+]

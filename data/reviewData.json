@@ -1,0 +1,34 @@
+[
+  {
+    "id": 1,
+    "brand": "Gul Ahmed",
+    "brandId": 7,
+    "review": "Very Great Quality",
+    "stars": 5,
+    "user": "absar"
+  },
+  {
+    "id": 2,
+    "brand": "Gul Ahmed",
+    "brandId": 36,
+    "review": "Cannot ask for more",
+    "stars": 5,
+    "user": "zubair"
+  },
+  {
+    "id": 3,
+    "brand": "Gul Ahmed",
+    "brandId": 7,
+    "review": "Perfect",
+    "stars": 5,
+    "user": "zubair"
+  },
+  {
+    "id": 4,
+    "brand": "Gul Ahmed",
+    "brandId": 7,
+    "review": "this is what i want for eid.",
+    "stars": 5,
+    "user": "emmad"
+  }
+]

@@ -1,0 +1,364 @@
+[
+  {
+    "id": 1,
+    "name": "Shalwar Kameez",
+    "description": "A classic shalwar kameez set made with premium fabric and intricate embroidery, perfect for any occasion.",
+    "price": 5000,
+    "brand": "Alkaram Studio",
+    "image": "https://narkins.com/cdn/shop/products/stitched-shalwar-kameez-sps8-grey-544447@2x.jpg?v=1688814727",
+    "search_count": 12
+  },
+  {
+    "id": 2,
+    "name": "Shalwar Kameez",
+    "description": "An elegant shalwar kameez set with delicate embellishments, ideal for festive gatherings.",
+    "price": 6500,
+    "brand": "Khaadi",
+    "image": "https://narkins.com/cdn/shop/products/stitched-shalwar-kameez-with-waist-coat-maroon-874651@2x.jpg?v=1688814733",
+    "search_count": 200
+  },
+  {
+    "id": 3,
+    "name": "Shalwar Kameez",
+    "description": "A stylish shalwar kameez ensemble with a modern twist, perfect for casual wear.",
+    "price": 4800,
+    "brand": "Bareeze",
+    "image": "https://sameersain.pk/cdn/shop/products/28A2616.jpg?v=1649457976",
+    "search_count": 210
+  },
+  {
+    "id": 4,
+    "name": "Shalwar Kameez",
+    "description": "A vibrant shalwar kameez set with colorful prints, ideal for summer outings.",
+    "price": 5200,
+    "brand": "Satrangi",
+    "image": "https://sameersain.pk/cdn/shop/products/728A2753.jpg?v=1649889260",
+    "search_count": 333
+  },
+  {
+    "id": 5,
+    "name": "Shalwar Kameez",
+    "description": "A luxurious shalwar kameez ensemble designed by HSY, featuring exquisite craftsmanship.",
+    "price": "₨9,500",
+    "brand": "HSY Studio",
+    "image": "https://www.muraqshman.com/cdn/shop/files/image00090.jpg?v=1695108028",
+    "search_count": 325
+  },
+  {
+    "id": 6,
+    "name": "Shalwar Kameez",
+    "description": "A chic shalwar kameez set with trendy patterns and designs, perfect for young women.",
+    "price": "₨4,600",
+    "brand": "ChenOne",
+    "image": "https://stylish.com.pk/cdn/shop/files/men-shalwar-kameez-grey-stylish-garments-pk-2_3f4ddee3-f13b-4e6e-999e-d7fb29101573.jpg?v=1706807345",
+    "search_count": 17
+  },
+  {
+    "id": 7,
+    "name": "Shalwar Kameez",
+    "description": "An elegant shalwar kameez ensemble with intricate embroidery, ideal for formal events.",
+    "price": "₨7,300",
+    "brand": "Gul Ahmed",
+    "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRJWxAPlXuEnyKJ-TaypFUqs-peekvRkpnZfgFENzgEKA&s",
+    "search_count": 100,
+    "sales": 500
+  },
+  {
+    "id": 8,
+    "name": "Shalwar Kameez",
+    "description": "A classic shalwar kameez set designed by Junaid Jamshed, known for its quality and elegance.",
+    "price": "₨6,800",
+    "brand": "Junaid Jamshed",
+    "image": "https://www.bargello.com/images/thumbs/0013243_modern-style-mens-shalwar-kameez_800.jpeg",
+    "search_count": 19
+  },
+  {
+    "id": 9,
+    "name": "Shalwar Kameez",
+    "description": "A trendy shalwar kameez ensemble by Generation, featuring contemporary designs.",
+    "price": "₨4,500",
+    "brand": "Generation",
+    "image": "https://edge.pk/cdn/shop/products/DSC02998_01.jpg?v=1680076382",
+    "search_count": 20
+  },
+  {
+    "id": 10,
+    "name": "Shalwar Kameez",
+    "description": "A stylish shalwar kameez set with vibrant colors and modern prints, perfect for casual outings.",
+    "price": "₨5,300",
+    "brand": "Nishat Linen",
+    "image": "https://www.colorsoutlet.com/wp-content/uploads/2022/04/13.jpg",
+    "search_count": 21
+  },
+  {
+    "id": 11,
+    "name": "Shalwar Kameez",
+    "description": "A sophisticated shalwar kameez ensemble designed by Sapphire Retail, featuring fine fabrics and elegant designs.",
+    "price": "₨8,000",
+    "brand": "Sapphire Retail",
+    "image": "https://www.faisalabadfabricstore.com/wp-content/uploads/2019/07/SK-47-scaled.jpg",
+    "search_count": 22
+  },
+  {
+    "id": 12,
+    "name": "Shalwar Kameez",
+    "description": "A stylish shalwar kameez set with contemporary designs, perfect for modern women.",
+    "price": "₨5,400",
+    "brand": "Zullbury",
+    "image": "https://xmilano.com/cdn/shop/products/DSC01510_d0471397-2f70-4981-8961-815ce85c3e92_5000x.jpg?v=1675945548",
+    "search_count": 23
+  },
+  {
+    "id": 13,
+    "name": "Shalwar Kameez",
+    "description": "A luxurious shalwar kameez ensemble by Maria B, featuring intricate embroidery and premium fabrics.",
+    "price": "₨9,200",
+    "brand": "Maria B",
+    "image": "https://www.muraqshman.com/cdn/shop/files/image00080.jpg?v=1694808703&width=1445",
+    "search_count": 24
+  },
+  {
+    "id": 14,
+    "name": "Shalwar Kameez",
+    "description": "A chic shalwar kameez set designed by Sana Safinaz, known for its modern yet traditional designs.",
+    "price": "₨7,500",
+    "brand": "Sana Safinaz",
+    "image": "https://edge.pk/cdn/shop/products/DSC02884_01.jpg?v=1680075474",
+    "search_count": 25
+  },
+  {
+    "id": 15,
+    "name": "Shalwar Kameez",
+    "description": "An elegant shalwar kameez ensemble by Zainab Chottani, featuring intricate details and exquisite craftsmanship.",
+    "price": "₨8,700",
+    "brand": "Zainab Chottani",
+    "image": "https://xmilano.com/cdn/shop/products/AY5A2425_5000x.jpg?v=1676888645",
+    "search_count": 26
+  },
+  {
+    "id": 16,
+    "name": "Shalwar Kameez",
+    "description": "A unique shalwar kameez ensemble designed by Hussain Rehar, known for its bold and innovative designs.",
+    "price": "₨10,000",
+    "brand": "Hussain Rehar",
+    "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTlzwWYNgBcZJxKCnuMtQs4x7RbQG96UQapDK9mm5n8Uw&s",
+    "search_count": 27
+  },
+  {
+    "id": 17,
+    "name": "Shalwar Kameez",
+    "description": "A glamorous shalwar kameez set by Ali Xeeshan, featuring stunning embellishments and luxurious fabrics.",
+    "price": "₨11,500",
+    "brand": "Ali Xeeshan",
+    "image": "https://diners.com.pk/cdn/shop/products/EG3194-BLACK-RS-6990-03.jpg?v=1686069188",
+    "search_count": 28
+  },
+  {
+    "id": 18,
+    "name": "Shalwar Kameez",
+    "description": "A classic shalwar kameez ensemble designed by Asim Jofa, known for its timeless elegance.",
+    "price": "₨8,900",
+    "brand": "Asim Jofa",
+    "image": "https://sameersain.pk/cdn/shop/products/28A2804.jpg?v=1649695883",
+    "search_count": 29
+  },
+  {
+    "id": 19,
+    "name": "Shalwar Kameez",
+    "description": "A chic shalwar kameez set by Farah Talib Aziz, featuring delicate embellishments and feminine designs.",
+    "price": "₨7,800",
+    "brand": "Farah Talib Aziz",
+    "image": "https://califord.com.pk/cdn/shop/products/d022202-grey-06_800x.jpg?v=1649928297",
+    "search_count": 30
+  },
+  {
+    "id": 20,
+    "name": "Shalwar Kameez",
+    "description": "A stylish shalwar kameez ensemble by Cross Stitch, featuring vibrant colors and intricate embroidery.",
+    "price": "₨6,700",
+    "brand": "Cross Stitch",
+    "image": "https://eminence.pk/cdn/shop/files/CopyofDSC04823.jpg?v=1709473016",
+    "search_count": 31
+  },
+  {
+    "id": 21,
+    "name": "Shalwar Kameez",
+    "description": "An elegant shalwar kameez set by Zara Shahjahan, known for its timeless designs and premium quality.",
+    "price": "₨8,400",
+    "brand": "Zara Shahjahan",
+    "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTICxifVqZ1-qqG3Qr4J0pP76xbF5fofpytAp35Voa1wg&s",
+    "search_count": 32
+  },
+  {
+    "id": 22,
+    "name": "Shalwar Kameez",
+    "description": "A chic shalwar kameez ensemble by Saira Shakira, featuring trendy designs and luxurious fabrics.",
+    "price": "₨7,300",
+    "brand": "Saira Shakira",
+    "image": "https://exportclub.pk/wp-content/uploads/2022/04/IMG_3414-3-1.jpg",
+    "search_count": 33
+  },
+  {
+    "id": 23,
+    "name": "Shalwar Kameez",
+    "description": "A stylish shalwar kameez set by Mushq, featuring modern designs and premium fabrics.",
+    "price": "₨6,600",
+    "brand": "Mushq",
+    "image": "https://mtjonline.com/cdn/shop/files/1605TEAL.jpg?v=1699271842",
+    "search_count": 34
+  },
+  {
+    "id": 24,
+    "name": "Shalwar Kameez",
+    "description": "An elegant shalwar kameez ensemble by Zaha, featuring intricate details and fine craftsmanship.",
+    "price": "₨8,600",
+    "brand": "Zaha",
+    "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQlqrFsn8z0VRk-G-LSfuGtufY5UVqQ0cPL4XSV7uE85g&s",
+    "search_count": 35
+  },
+  {
+    "id": 25,
+    "name": "Shalwar Kameez",
+    "description": "A chic shalwar kameez set by Faiza Saqlain, featuring modern designs and luxurious fabrics.",
+    "price": "₨7,400",
+    "brand": "Faiza Saqlain",
+    "image": "https://www.bargello.com/images/thumbs/0013247_dazzling-mens-shalwar-kameez-suit_800.jpeg",
+    "search_count": 36
+  },
+  {
+    "id": 26,
+    "name": "Shalwar Kameez",
+    "description": "A trendy shalwar kameez ensemble by Limelight, featuring contemporary designs and vibrant colors.",
+    "price": "₨5,800",
+    "brand": "Limelight",
+    "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTS1Ibfm1gzLssaE-rx3AF8lA0fPaM1OBOGV98CkiKn1A&s",
+    "search_count": 37
+  },
+  {
+    "id": 27,
+    "name": "Shalwar Kameez",
+    "description": "A classic shalwar kameez set by Ethnic, featuring traditional designs and premium fabrics.",
+    "price": "₨6,900",
+    "brand": "Ethnic",
+    "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTfNuNQVEac4n1ImS0dZWHHTZL--k2ze31cMDR5tUOWyQ&s",
+    "search_count": 38
+  },
+  {
+    "id": 28,
+    "name": "Shalwar Kameez",
+    "description": "A chic shalwar kameez ensemble by Ego, featuring trendy designs and comfortable fabrics.",
+    "price": "₨5,500",
+    "brand": "Ego",
+    "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQa_EC6Xe-qtloL9G7qI3ViqdsyE8Cni6NdUUsBAGt6OA&s",
+    "search_count": 39
+  },
+  {
+    "id": 29,
+    "name": "Shalwar Kameez",
+    "description": "A stylish shalwar kameez set by Agha Noor, featuring modern designs and elegant details.",
+    "price": "₨7,000",
+    "brand": "Agha Noor",
+    "image": "https://www.junaidjamshed.com/media/catalog/product/3/2/32719_1_.jpg",
+    "search_count": 40
+  },
+  {
+    "id": 30,
+    "name": "Shalwar Kameez",
+    "description": "A classic shalwar kameez set made with premium fabric and intricate embroidery, perfect for any occasion.",
+    "price": "₨5,000",
+    "brand": "Alkaram Studio",
+    "image": "https://eminence.pk/cdn/shop/files/CopyofDSC04304.jpg?v=1709822023",
+    "search_count": 41
+  },
+  {
+    "id": 31,
+    "name": "Shalwar Kameez",
+    "description": "An elegant shalwar kameez set with delicate embellishments, ideal for festive gatherings.",
+    "price": "₨6,500",
+    "brand": "Khaadi",
+    "image": "https://mtjonline.com/cdn/shop/files/1600BRONZE-4.jpg?v=1699270936",
+    "search_count": 42
+  },
+  {
+    "id": 32,
+    "name": "Shalwar Kameez",
+    "description": "A stylish shalwar kameez ensemble with a modern twist, perfect for casual wear.",
+    "price": "₨4,800",
+    "brand": "Bareeze",
+    "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSHO76Gd1JWQwMJ5cPjFRrEeTUDA-YnDaQ64xDMzR--pg&s",
+    "search_count": 43
+  },
+  {
+    "id": 33,
+    "name": "Shalwar Kameez",
+    "description": "A vibrant shalwar kameez set with colorful prints, ideal for summer outings.",
+    "price": "₨5,200",
+    "brand": "Satrangi",
+    "image": "https://heeli.com.pk/cdn/shop/files/h16.jpg?v=1694809758&width=2048",
+    "search_count": 44
+  },
+  {
+    "id": 34,
+    "name": "Shalwar Kameez",
+    "description": "A luxurious shalwar kameez ensemble designed by HSY, featuring exquisite craftsmanship.",
+    "price": "₨9,500",
+    "brand": "HSY Studio",
+    "image": "https://narkins.com/cdn/shop/products/stitched-shalwar-kameez-pgrs-militia-371840@2x.jpg?v=1688814732",
+    "search_count": 45
+  },
+  {
+    "id": 35,
+    "name": "Shalwar Kameez",
+    "description": "A chic shalwar kameez set with trendy patterns and designs, perfect for young women.",
+    "price": "₨4,600",
+    "brand": "ChenOne",
+    "image": "https://www.muraqshman.com/cdn/shop/files/image00122.jpg?v=1694808764",
+    "search_count": 46
+  },
+  {
+    "id": 36,
+    "name": "Shalwar Kameez",
+    "description": "An elegant shalwar kameez ensemble with intricate embroidery, ideal for formal events.",
+    "price": "₨7,200",
+    "brand": "Gul Ahmed",
+    "image": "https://www.saeedajmalstores.com/cdn/shop/products/MenPremiumShalwarKameezOff-White_3_1024x1024.jpg?v=1667545992",
+    "search_count": 47,
+    "sales": 320
+  },
+  {
+    "id": 37,
+    "name": "Shalwar Kameez",
+    "description": "A classic shalwar kameez set designed by Junaid Jamshed, known for its quality and elegance.",
+    "price": "₨6,800",
+    "brand": "Junaid Jamshed",
+    "image": "https://cdn.shopify.com/s/files/1/0048/7309/3192/files/winter-new-shoot-VERTICAL_480x480.jpg?v=1614581007",
+    "search_count": 48
+  },
+  {
+    "id": 38,
+    "name": "Shalwar Kameez",
+    "description": "A trendy shalwar kameez ensemble by Generation, featuring contemporary designs.",
+    "price": "₨4,500",
+    "brand": "Generation",
+    "image": "https://www.colorsoutlet.com/wp-content/uploads/2022/06/C-1175-13999-7.jpg",
+    "search_count": 49
+  },
+  {
+    "id": 39,
+    "name": "Shalwar Kameez",
+    "description": "A stylish shalwar kameez set with vibrant colors and modern prints, perfect for casual outings.",
+    "price": "₨5,300",
+    "brand": "Nishat Linen",
+    "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSU2q9QI8DijA_W9zvtIoqnncA8aIjE9YgJJFzBHeDwdg&s",
+    "search_count": 50
+  },
+  {
+    "id": 40,
+    "name": "Shalwar Kameez",
+    "description": "A sophisticated shalwar kameez ensemble designed by Sapphire Retail, featuring fine fabrics and elegant designs.",
+    "price": "₨8,000",
+    "brand": "Sapphire Retail",
+    "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS_Dv9D7nHl58mjaRvjNwz_Q63hyMeq-cawYmYXpaQR3Q&s",
+    "search_count": 51
+  }
+]

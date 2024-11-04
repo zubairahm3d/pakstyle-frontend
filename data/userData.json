@@ -1,0 +1,52 @@
+[
+  {
+    "id": 1,
+    "name": "Zubair Ahmed BRohi",
+    "username": "zubair",
+    "email": "zubairahm3d@gmail.com",
+    "password": "12345",
+    "phone": "30738275211",
+    "profile_pic": "https://t4.ftcdn.net/jpg/04/10/43/77/360_F_410437733_hdq4Q3QOH9uwh0mcqAhRFzOKfrCR24Ta.jpg",
+    "type": "customer"
+  },
+  {
+    "id": 2,
+    "name": "Gul Ahmed",
+    "username": "gulahmed",
+    "email": "gulahmed@gmail.com",
+    "password": "12345",
+    "phone": "12345678901",
+    "profile_pic": "https://t4.ftcdn.net/jpg/04/10/43/77/360_F_410437733_hdq4Q3QOH9uwh0mcqAhRFzOKfrCR24Ta.jpg",
+    "type": "brand"
+  },
+  {
+    "id": 3,
+    "name": "Absar Khalid",
+    "username": "absarkhalid",
+    "email": "absarkhalid@gmail.com",
+    "password": "12345",
+    "phone": "12345678901",
+    "profile_pic": "https://media.licdn.com/dms/image/D4D03AQFScI3YheTWdQ/profile-displayphoto-shrink_200_200/0/1695967740931?e=2147483647&v=beta&t=jdTVgpj0k8lNN8vV0ZS3oa2owxeLGX7geLd1lpINjd0",
+    "type": "designer"
+  },
+  {
+    "id": 4,
+    "name": "Zubair Ahmed",
+    "username": "zubair",
+    "email": "zubairahm3d@gmail.com",
+    "password": "12345",
+    "phone": "30738275211",
+    "profile_pic": "https://t4.ftcdn.net/jpg/04/10/43/77/360_F_410437733_hdq4Q3QOH9uwh0mcqAhRFzOKfrCR24Ta.jpg",
+    "type": "designer"
+  },
+  {
+    "id": 5,
+    "name": "Zubair Ahmed",
+    "username": "zubair",
+    "email": "zubairahm3d@gmail.com",
+    "password": "12345",
+    "phone": "30738275211",
+    "profile_pic": "https://t4.ftcdn.net/jpg/04/10/43/77/360_F_410437733_hdq4Q3QOH9uwh0mcqAhRFzOKfrCR24Ta.jpg",
+    "type": "designer"
+  }
+]
