@@ -13,12 +13,18 @@ import ItemScreen from "./ItemScreen";
 import CartScreen from "./CartScreen";
 import { CartProvider } from "../Context/CartContext";
 import CheckOutScreen from "./CheckOutScreen";
-import DesignerDetailScreen from "./DesignerDetailScreen";
-import DesignerOrderScreen from "./DesignerOrderScreen";
+import DesignerOrderScreen from "./DesignerOrderScreen"; // Import the new screen
+import DesignerDetailScreen from "./DesignerDetailScreen"; // Import the new screen
+import DesignerOrderHistory from "./DesignerOrderHistory";
+import DesignerOrderDetail from "./DesignerOrderDetail";
+import VirtualTryOn from "./VirtualTryOn";
+import ShowDesignerPortfolio from "./ShowDesignerPortfolio";
+
 
 const Tab = createBottomTabNavigator();
 
 const HomeScreen = ({ navigation, route }) => {
+  const { user } = route.params;
   const [clothes, setClothes] = useState([]);
 
   useEffect(() => {
@@ -70,45 +76,33 @@ const HomeScreen = ({ navigation, route }) => {
           {() => <HomeScreenContent clothes={clothes} />}
         </Tab.Screen>
         <Tab.Screen name="Browse" options={{ headerShown: false }}>
-          {() => <BrowseScreen user={route.params.user} />}
+          {() => <BrowseScreen user={user} />}
         </Tab.Screen>
-
         <Tab.Screen name="Search" component={SearchScreen} />
-        <Tab.Screen
-          name="Designers"
-          component={Designers}
+        <Tab.Screen 
+          name="Designers" 
           options={{ headerShown: false }}
-        />
+        >
+          {() => <Designers user={user} />}
+        </Tab.Screen>
         <Tab.Screen name="Cart" options={{ headerShown: false }}>
           {() => (
-            <CartScreen user={route.params.user} navigation={navigation} />
+            <CartScreen user={user} navigation={navigation} />
           )}
         </Tab.Screen>
         <Tab.Screen name="Profile" options={{ headerShown: false }}>
           {() => (
-            <ProfileScreen user={route.params.user} navigation={navigation} />
+            <ProfileScreen user={user} navigation={navigation} />
           )}
         </Tab.Screen>
-        {/* <Tab.Screen
-          name="Check Out"
-          options={{ headerShown: false, tabBarButton: () => null }} // Hide from tab bar
-        >
+
+        
+
+        {/* <Tab.Screen name="Virtual Try-On" options={{ headerShown: false }}>
           {() => (
-            <CheckOutScreen user={route.params.user} navigation={navigation} />
+            <VirtualTryOn user={user} navigation={navigation} />
           )}
         </Tab.Screen> */}
-
-        <Tab.Screen
-          name="Designer Order"
-          component={DesignerOrderScreen}
-          options={{ headerShown: false, tabBarButton: () => null }}
-        />
-
-        <Tab.Screen
-          name="Designer Detail"
-          component={DesignerDetailScreen}
-          options={{ headerShown: false, tabBarButton: () => null }}
-        />
 
         <Tab.Screen
           name="New Collection"
@@ -125,6 +119,40 @@ const HomeScreen = ({ navigation, route }) => {
           component={ItemScreen}
           options={{ headerShown: false, tabBarButton: () => null }}
         />
+        <Tab.Screen
+          name="Designer Order"
+          options={{ headerShown: false, tabBarButton: () => null }}
+        >
+          {() => <DesignerOrderScreen user={user} />}
+        </Tab.Screen>
+
+        <Tab.Screen
+          name="ShowDesignerPortfolio"
+          options={{ headerShown: false, tabBarButton: () => null }}
+        >
+          {() => <ShowDesignerPortfolio user={user} />}
+        </Tab.Screen>
+
+        <Tab.Screen
+          name="Designer Order History"
+          options={{ headerShown: false, tabBarButton: () => null }}
+        >
+          {() => <DesignerOrderHistory user={user} />}
+        </Tab.Screen>
+
+        <Tab.Screen
+          name="Designer Order Detail"
+          options={{ headerShown: false, tabBarButton: () => null }}
+        >
+          {() => <DesignerOrderDetail user={user} />}
+        </Tab.Screen>
+
+        <Tab.Screen
+          name="Designer Detail"
+          options={{ headerShown: false, tabBarButton: () => null }}
+        >
+          {() => <DesignerDetailScreen user={user} />}
+        </Tab.Screen>
       </Tab.Navigator>
     </CartProvider>
   );

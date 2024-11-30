@@ -1,256 +1,424 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   Image,
   ScrollView,
-  Button,
+  Dimensions,
   TouchableOpacity,
-  Modal,
-  TouchableWithoutFeedback,
-} from "react-native";
-import { useNavigation, useFocusEffect } from "@react-navigation/native";
-import designerData from "./../../data/designerData.json";
+  Platform,
+  Animated,
+} from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { MaterialIcons, FontAwesome5, Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 
-const DesignerDetailScreen = ({ route }) => {
-  const navigation = useNavigation();
-  const { designer } = route.params;
+const { width, height } = Dimensions.get('window');
 
-  const designerCustomData = designerData.find(
-    (data) => data.userId === designer.id
-  );
+const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 
-  const [selectedOptions, setSelectedOptions] = useState({});
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [selectedImage, setSelectedImage] = useState(null);
-
-  const handleOptionSelect = (option, choice, price) => {
-    setSelectedOptions((prevSelectedOptions) => {
-      const currentOption = prevSelectedOptions[option];
-      // Toggle the selection
-      if (currentOption && currentOption.name === choice) {
-        const { [option]: removed, ...rest } = prevSelectedOptions;
-        return rest;
-      } else {
-        return {
-          ...prevSelectedOptions,
-          [option]: { name: choice, price: price },
-        };
-      }
-    });
-  };
-
-  const calculateTotalPrice = () => {
-    let total =
-      designerCustomData && designerCustomData.startPrice
-        ? designerCustomData.startPrice
-        : 0;
-    for (const option in selectedOptions) {
-      if (selectedOptions[option] && selectedOptions[option].price) {
-        total += selectedOptions[option].price;
-      }
+const StatusBadge = ({ status }) => {
+  const getStatusColor = () => {
+    switch (status?.toLowerCase()) {
+      case 'available':
+        return ['#4CAF50', '#45a049'];
+      case 'busy':
+        return ['#FFA000', '#FF8F00'];
+      default:
+        return ['#757575', '#616161'];
     }
-    return total;
   };
-
-  const renderCustomizationChoices = (customizations) => {
-    return customizations.map((customization, index) => (
-      <View key={index} style={styles.customizationSection}>
-        <Text style={styles.customizationOption}>{customization.option}:</Text>
-        {customization.choices.map((choice, idx) => (
-          <TouchableOpacity
-            key={idx}
-            style={[
-              styles.choiceButton,
-              selectedOptions[customization.option]?.name === choice.name &&
-                styles.selectedChoiceButton,
-            ]}
-            onPress={() =>
-              handleOptionSelect(
-                customization.option,
-                choice.name,
-                choice.price
-              )
-            }
-          >
-            <Text style={styles.choiceText}>
-              {choice.name} - Rs. {choice.price}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    ));
-  };
-
-  const handleOrderPress = () => {
-    navigation.navigate("Designer Order", {
-      selectedOptions: selectedOptions,
-      totalPrice: calculateTotalPrice(),
-    });
-  };
-
-  const openImageModal = (image) => {
-    setSelectedImage(image);
-    setIsModalVisible(true);
-  };
-
-  const closeImageModal = () => {
-    setIsModalVisible(false);
-    setSelectedImage(null);
-  };
-
-  useFocusEffect(
-    React.useCallback(() => {
-      return () => setSelectedOptions({});
-    }, [])
-  );
 
   return (
-    <TouchableWithoutFeedback onPress={() => navigation.goBack()}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <Image
-          source={{ uri: designer.profile_pic }}
-          style={styles.profilePic}
+    <LinearGradient
+      colors={getStatusColor()}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 0 }}
+      style={styles.statusBadge}
+    >
+      <Text style={styles.statusText}>{status || 'Unknown'}</Text>
+    </LinearGradient>
+  );
+};
+
+const DesignerDetailScreen = () => {
+  const navigation = useNavigation();
+  const route = useRoute();
+  const [showOrderScreen, setShowOrderScreen] = useState(false);
+  const [scrollY] = useState(new Animated.Value(0));
+
+  const { designer = {}, user = {} } = route.params || {};
+
+  const handleCheckDesigns = () => {
+    navigation.navigate('ShowDesignerPortfolio', { 
+      designerId: designer._id 
+    });
+  };
+
+  const handlePlaceOrder = () => {
+    navigation.navigate('Designer Order', {
+      designerId: designer._id,
+      user: user,
+    });
+  };
+
+  if (showOrderScreen) {
+    return <DesignerOrderScreen designerId={designer._id} user={user} />;
+  }
+
+  if (!designer._id) {
+    return (
+      <View style={styles.errorContainer}>
+        <Ionicons name="alert-circle-outline" size={64} color="#ff6b6b" />
+        <Text style={styles.errorText}>Designer information not available.</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={() => navigation.goBack()}>
+          <Text style={styles.retryButtonText}>Go Back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const headerHeight = scrollY.interpolate({
+    inputRange: [0, 100],
+    outputRange: [height * 0.4, height * 0.2],
+    extrapolate: 'clamp',
+  });
+
+  const imageSize = scrollY.interpolate({
+    inputRange: [0, 100],
+    outputRange: [width * 0.35, width * 0.25],
+    extrapolate: 'clamp',
+  });
+
+  const headerTextOpacity = scrollY.interpolate({
+    inputRange: [0, 100],
+    outputRange: [1, 0],
+    extrapolate: 'clamp',
+  });
+
+  return (
+    <View style={styles.container}>
+      <AnimatedLinearGradient
+        colors={['#6a11cb', '#2575fc']}
+        style={[styles.header, { height: headerHeight }]}
+      >
+        <Animated.Image
+          source={{ uri: designer.profilePicture || 'https://via.placeholder.com/150' }}
+          style={[styles.profilePic, { width: imageSize, height: imageSize }]}
         />
-        <Text style={styles.name}>{designer.name}</Text>
-        <Text style={styles.email}>{designer.email}</Text>
-        <Text style={styles.phone}>{designer.phone}</Text>
+        <Animated.View style={{ opacity: headerTextOpacity }}>
+          <Text style={styles.name}>{designer.name || 'Unknown Designer'}</Text>
+          <Text style={styles.username}>@{designer.username || 'username'}</Text>
+          <StatusBadge status={designer.status} />
+        </Animated.View>
+      </AnimatedLinearGradient>
 
-        {designerCustomData ? (
-          <>
-            <View style={styles.portfolioContainer}>
-              <Text style={styles.portfolioTitle}>Portfolio:</Text>
-              <ScrollView horizontal>
-                {designerCustomData.pictures.map((picture, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    onPress={() => openImageModal(picture)}
-                  >
-                    <Image
-                      key={index}
-                      source={{ uri: picture }}
-                      style={styles.portfolioImage}
-                    />
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-
-            <View style={styles.customizationContainer}>
-              <Text style={styles.customizationTitle}>
-                Customization Options:
-              </Text>
-              {renderCustomizationChoices(designerCustomData.customizations)}
-              <Text style={styles.totalPrice}>
-                Total Price: Rs. {calculateTotalPrice()}
-              </Text>
-              <Button title="Place Order" onPress={handleOrderPress} />
-            </View>
-          </>
-        ) : (
-          <Text>No customization data available for this designer.</Text>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: false }
         )}
-
-        <Modal visible={isModalVisible} transparent={true}>
-          <TouchableWithoutFeedback onPress={closeImageModal}>
-            <View style={styles.modalBackground}>
-              <Image source={{ uri: selectedImage }} style={styles.fullImage} />
+        scrollEventThrottle={16}
+      >
+        <View style={styles.infoContainer}>
+          <View style={styles.infoCard}>
+            <View style={styles.infoRow}>
+              <MaterialIcons name="phone" size={20} color="#6a11cb" />
+              <Text style={styles.infoText}>{designer.phone || 'N/A'}</Text>
             </View>
-          </TouchableWithoutFeedback>
-        </Modal>
+            <View style={styles.infoRow}>
+              <MaterialIcons name="email" size={20} color="#6a11cb" />
+              <Text style={styles.infoText}>{designer.email || 'N/A'}</Text>
+            </View>
+            {designer.website && (
+              <View style={styles.infoRow}>
+                <MaterialIcons name="language" size={20} color="#6a11cb" />
+                <Text style={styles.infoText}>{designer.website}</Text>
+              </View>
+            )}
+          </View>
+
+          {designer.address && (
+            <View style={styles.addressCard}>
+              <View style={styles.cardHeader}>
+                <MaterialIcons name="location-on" size={24} color="#6a11cb" />
+                <Text style={styles.cardTitle}>Address</Text>
+              </View>
+              <Text style={styles.addressText}>{designer.address.street || 'N/A'}</Text>
+              <Text style={styles.addressText}>
+                {designer.address.city || 'N/A'}, {designer.address.state || 'N/A'} {designer.address.zipCode || 'N/A'}
+              </Text>
+              <Text style={styles.addressText}>{designer.address.country || 'N/A'}</Text>
+            </View>
+          )}
+
+          <View style={styles.statsCard}>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{designer.completedOrders || 0}</Text>
+              <Text style={styles.statLabel}>Completed Orders</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{designer.rating || '0.0'}</Text>
+              <Text style={styles.statLabel}>Rating</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{designer.experience || '0'} yrs</Text>
+              <Text style={styles.statLabel}>Experience</Text>
+            </View>
+          </View>
+
+          <View style={styles.aboutCard}>
+            <Text style={styles.aboutTitle}>About Me</Text>
+            <Text style={styles.aboutText}>
+              {designer.about || 'This designer hasnt provided any information yet.'}
+            </Text>
+          </View>
+        </View>
       </ScrollView>
-    </TouchableWithoutFeedback>
+
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity style={styles.button} onPress={handleCheckDesigns}>
+          <FontAwesome5 name="tshirt" size={20} color="#fff" />
+          <Text style={styles.buttonText}>Check Designs</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.button, styles.primaryButton]} onPress={handlePlaceOrder}>
+          <FontAwesome5 name="shopping-cart" size={20} color="#fff" />
+          <Text style={styles.buttonText}>Place Order</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#fff",
-    padding: 20,
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+  },
+  errorText: {
+    fontSize: 18,
+    color: '#ff6b6b',
+    textAlign: 'center',
+    marginTop: 16,
+    marginBottom: 24,
+  },
+  retryButton: {
+    backgroundColor: '#6a11cb',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  header: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: height * 0.05,
+    paddingBottom: height * 0.03,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
   },
   profilePic: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    marginBottom: 20,
-  },
-  name: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 10,
-  },
-  email: {
-    fontSize: 18,
-    color: "#666",
-    marginBottom: 10,
-  },
-  phone: {
-    fontSize: 18,
-    color: "#666",
-  },
-  portfolioContainer: {
-    marginTop: 20,
-    marginBottom: 20,
-    width: "100%",
-  },
-  portfolioTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 10,
-  },
-  portfolioImage: {
-    width: 150,
-    height: 150,
-    marginRight: 10,
-  },
-  customizationContainer: {
-    marginTop: 20,
-    width: "100%",
-  },
-  customizationTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 10,
-  },
-  customizationSection: {
+    borderRadius: width * 0.175,
+    borderWidth: 3,
+    borderColor: '#fff',
     marginBottom: 15,
   },
-  customizationOption: {
-    fontSize: 18,
-    fontWeight: "bold",
+  name: {
+    fontSize: width * 0.06,
+    fontWeight: 'bold',
+    color: '#fff',
     marginBottom: 5,
   },
-  choiceButton: {
-    padding: 10,
-    marginVertical: 5,
-    backgroundColor: "#f0f0f0",
-    borderRadius: 5,
+  username: {
+    fontSize: width * 0.04,
+    color: '#e0e0e0',
+    marginBottom: 10,
   },
-  selectedChoiceButton: {
-    backgroundColor: "#c0c0c0",
+  statusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
   },
-  choiceText: {
-    fontSize: 16,
+  statusText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
-  totalPrice: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginTop: 20,
-    marginBottom: 20,
-  },
-  modalBackground: {
+  scrollView: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.8)",
-    justifyContent: "center",
-    alignItems: "center",
   },
-  fullImage: {
-    width: "90%",
-    height: "70%",
+  infoContainer: {
+    padding: 15,
+  },
+  infoCard: {
+    backgroundColor: '#fff',
+    borderRadius: 15,
+    padding: 15,
+    marginBottom: 15,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3.84,
+      },
+      android: {
+        elevation: 5,
+      },
+    }),
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  infoText: {
+    marginLeft: 10,
+    fontSize: 16,
+    color: '#333',
+  },
+  addressCard: {
+    backgroundColor: '#fff',
+    borderRadius: 15,
+    padding: 15,
+    marginBottom: 15,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3.84,
+      },
+      android: {
+        elevation: 5,
+      },
+    }),
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginLeft: 10,
+  },
+  addressText: {
+    fontSize: 16,
+    color: '#666',
+    marginTop: 5,
+  },
+  statsCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    backgroundColor: '#fff',
+    borderRadius: 15,
+    padding: 15,
+    marginBottom: 15,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3.84,
+      },
+      android: {
+        elevation: 5,
+      },
+    }),
+  },
+  statItem: {
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#6a11cb',
+  },
+  statLabel: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 5,
+  },
+  aboutCard: {
+    backgroundColor: '#fff',
+    borderRadius: 15,
+    padding: 15,
+    marginBottom: 15,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3.84,
+      },
+      android: {
+        elevation: 5,
+      },
+    }),
+  },
+  aboutTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 10,
+  },
+  aboutText: {
+    fontSize: 16,
+    color: '#666',
+    lineHeight: 24,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingVertical: 15,
+    paddingHorizontal: 15,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+  },
+  button: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 25,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+      },
+      android: {
+        elevation: 5,
+      },
+    }),
+  },
+  primaryButton: {
+    backgroundColor: '#6a11cb',
+  },
+  buttonText: {
+    color: '#333',
+    marginLeft: 10,
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 

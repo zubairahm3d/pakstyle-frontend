@@ -77,6 +77,7 @@ const LoginScreen = ({ navigation }) => {
     setIsLoading(true);
 
     try {
+      // console.log("logining");
       const response = await fetch(`${API_URL}/users/login`, {
         method: "POST",
         headers: {
