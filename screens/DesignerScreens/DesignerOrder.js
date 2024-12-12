@@ -1,47 +1,125 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  Image,
   FlatList,
+  ActivityIndicator,
+  Alert,
   TouchableOpacity,
+  Image,
 } from "react-native";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
+import { API_URL } from "@env";
 
-const DesignerOrder = () => {
+const DesignerOrder = ({ user, navigation }) => {
   const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const userId = user ? user._id : null;
 
-  useEffect(() => {
-    setOrders([]);
-  }, []);
+  const fetchData = useCallback(async () => {
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
 
-  const renderItem = ({ item }) => (
-    <View style={styles.orderContainer}>
-      <Text style={styles.orderTitle}>Order #{item.id}</Text>
-      <Text style={styles.orderDetails}>Customer: {item.customer}</Text>
-      <Text style={styles.orderDetails}>Total: {item.total}</Text>
-      <TouchableOpacity style={styles.orderButton}>
-        <Text style={styles.orderButtonText}>View Details</Text>
-      </TouchableOpacity>
-    </View>
+    setLoading(true);
+    try {
+      // Fetch custom orders for the designer
+      const response = await fetch(`${API_URL}/custom-orders?designerId=${userId}`);
+      if (!response.ok) throw new Error("Failed to fetch custom orders");
+      const data = await response.json();
+      setOrders(data.data);
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Error", "There was a problem fetching custom orders.");
+    } finally {
+      setLoading(false);
+    }
+  }, [userId]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchData();
+    }, [fetchData])
   );
+
+  const handleOrderPress = (order) => {
+    navigation.navigate("DesignerOrderDetail", { order });
+  };
+
+  if (!user) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>Error: User information not available</Text>
+      </View>
+    );
+  }
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#6200ee" />
+        <Text style={styles.loadingText}>Fetching custom orders...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
       {orders.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Image
-            source={require("../../assets/icons/empty_cart.png")}
-            style={styles.emptyImage}
-          />
-          <Text style={styles.emptyText}>No Orders Yet</Text>
+        <View style={styles.noOrdersContainer}>
+          <Ionicons name="cart-outline" size={64} color="#6200ee" />
+          <Text style={styles.noOrdersText}>No custom orders found.</Text>
         </View>
       ) : (
         <FlatList
           data={orders}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={styles.listContentContainer}
+          keyExtractor={(item) => item.customOrderId}
+          renderItem={({ item }) => {
+            const formattedDate = new Date(item.createdAt).toLocaleDateString(
+              undefined,
+              {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              }
+            );
+
+            return (
+              <TouchableOpacity
+                style={styles.orderContainer}
+                onPress={() => handleOrderPress(item)}
+              >
+                <View style={styles.orderHeader}>
+                  <Text style={styles.orderId}>Order ID: {item.customOrderId}</Text>
+                  <MaterialIcons
+                    name="chevron-right"
+                    size={24}
+                    color="#6200ee"
+                  />
+                </View>
+                <View style={styles.orderDetails}>
+                  <View style={styles.detailItem}>
+                    <Ionicons
+                      name="checkmark-done-outline"
+                      size={20}
+                      color="#6200ee"
+                    />
+                    <Text style={styles.detailText}>Status: {item.status}</Text>
+                  </View>
+                  <View style={styles.detailItem}>
+                    <Ionicons name="shirt-outline" size={20} color="#6200ee" />
+                    <Text style={styles.detailText}>
+                      Type: {item.garmentType}
+                    </Text>
+                  </View>
+                </View>
+                <Text style={styles.orderDate}>{formattedDate}</Text>
+              </TouchableOpacity>
+            );
+          }}
         />
       )}
     </View>
@@ -51,60 +129,86 @@ const DesignerOrder = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f4f4f4",
-    padding: 20,
+    backgroundColor: "#f2f2f2",
+    padding: 16,
   },
-  emptyContainer: {
+  loadingContainer: {
     flex: 1,
-    alignItems: "center",
     justifyContent: "center",
-  },
-  emptyImage: {
-    width: 150,
-    height: 150,
-    marginBottom: 20,
-  },
-  emptyText: {
-    fontSize: 18,
-    color: "#7f8c8d",
-  },
-  orderContainer: {
-    backgroundColor: "#fff",
-    padding: 15,
-    borderRadius: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 5,
-    marginBottom: 15,
-  },
-  orderTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 5,
-  },
-  orderDetails: {
-    fontSize: 16,
-    color: "#34495e",
-    marginBottom: 5,
-  },
-  orderButton: {
-    backgroundColor: "#2980b9",
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
     alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: "#6200ee",
+  },
+  noOrdersContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  noOrdersText: {
+    fontSize: 18,
+    color: "#6200ee",
     marginTop: 10,
   },
-  orderButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
+  orderContainer: {
+    backgroundColor: "#ffffff",
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 5,
   },
-  listContentContainer: {
-    paddingBottom: 20,
+  orderHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  orderId: {
+    fontWeight: "700",
+    fontSize: 20,
+    color: "#333",
+  },
+  orderDetails: {
+    marginTop: 10,
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  detailItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginLeft: 16,
+  },
+  detailText: {
+    marginLeft: 6,
+    fontSize: 14,
+    color: "#555",
+  },
+  orderDate: {
+    marginTop: 10,
+    fontSize: 14,
+    color: "#555",
+    textAlign: "right",
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorText: {
+    fontSize: 16,
+    color: 'red',
+    textAlign: 'center',
   },
 });
 
 export default DesignerOrder;
+

@@ -8,27 +8,49 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
-  Platform,
+  Switch,
   Dimensions,
+  Platform,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
+const API_URL = 'https://api.fashn.ai/v1';
+const API_KEY = 'fa-MS2KGDDYer7s-nmbXJSsLHwgEhOB0vxMSWsLq';
 
 export default function VirtualTryOn() {
-  const [personImage, setPersonImage] = useState(null);
-  const [clothImage, setClothImage] = useState(null);
-  const [resultImage, setResultImage] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [imageErrors, setImageErrors] = useState({
-    person: false,
-    cloth: false,
-    result: false
-  });
+  const [modelImage, setModelImage] = useState(null);
+  const [garmentImage, setGarmentImage] = useState(null);
+  const [category, setCategory] = useState('tops');
+  const [coverFeet, setCoverFeet] = useState(false);
+  const [adjustHands, setAdjustHands] = useState(false);
+  const [restoreBackground, setRestoreBackground] = useState(false);
+  const [restoreClothes, setRestoreClothes] = useState(false);
+  const [flatLay, setFlatLay] = useState(false);
+  const [longTop, setLongTop] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [predictionId, setPredictionId] = useState(null);
+  const [status, setStatus] = useState(null);
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     requestPermissions();
   }, []);
+
+  useEffect(() => {
+    let intervalId;
+
+    if (isGenerating && status === 'processing') {
+      intervalId = setInterval(checkStatus, 1000);
+    }
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [isGenerating, status]);
 
   const requestPermissions = async () => {
     try {
@@ -43,18 +65,9 @@ export default function VirtualTryOn() {
         }
       }
     } catch (error) {
-      console.error('Permission request error:', error);
+      console.error('Error requesting permissions:', error);
+      Alert.alert('Error', 'Failed to request permissions. Please try again.');
     }
-  };
-
-  const getImageDimensions = (uri) => {
-    return new Promise((resolve, reject) => {
-      Image.getSize(
-        uri,
-        (width, height) => resolve({ width, height }),
-        (error) => reject(error)
-      );
-    });
   };
 
   const selectImage = async (setImage, type) => {
@@ -64,111 +77,131 @@ export default function VirtualTryOn() {
         allowsEditing: true,
         aspect: [3, 4],
         quality: 1,
+        base64: true,
       });
 
       if (!result.canceled && result.assets && result.assets[0]) {
-        const dimensions = await getImageDimensions(result.assets[0].uri);
-        
-        setImage({
-          uri: result.assets[0].uri,
-          type: type,
-          width: dimensions.width,
-          height: dimensions.height,
-        });
-
-        // Reset error state for this image type
-        setImageErrors(prev => ({
-          ...prev,
-          [type === 'personImage' ? 'person' : 'cloth']: false
-        }));
+        setImage(`data:image/jpeg;base64,${result.assets[0].base64}`);
       }
     } catch (error) {
       console.error('Image selection error:', error);
-      Alert.alert(
-        'Error',
-        'Failed to select image. Please try again.',
-        [{ text: 'OK' }]
-      );
+      Alert.alert('Error', 'Failed to select image. Please try again.');
     }
   };
 
-  const handleTryOn = async () => {
-    if (!personImage?.uri || !clothImage?.uri) {
-      Alert.alert('Missing Images', 'Please select both a person image and a clothing image');
+  const handleGenerate = async () => {
+    if (!modelImage || !garmentImage) {
+      Alert.alert('Missing Images', 'Please select both a model image and a garment image');
       return;
     }
 
-    setLoading(true);
-    setResultImage(null);
+    setIsLoading(true);
+    setIsGenerating(true);
+    setError(null);
+    setResult(null);
 
     try {
-      const formData = new FormData();
-      
-      // Append images with proper type and name
-      [
-        { field: 'personImage', data: personImage },
-        { field: 'clothImage', data: clothImage }
-      ].forEach(({ field, data }) => {
-        formData.append(field, {
-          uri: data.uri,
-          type: 'image/jpeg',
-          name: `${field}.jpg`,
-        });
-      });
-
-      const response = await fetch('https://virtual-try-on2.p.rapidapi.com/clothes-virtual-tryon', {
+      const response = await fetch(`${API_URL}/run`, {
         method: 'POST',
         headers: {
-          'x-rapidapi-key': '1287701579msheb292cbf852cca7p1bc887jsn79b4c03e2499',
-          'x-rapidapi-host': 'virtual-try-on2.p.rapidapi.com',
-          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${API_KEY}`,
+          'Content-Type': 'application/json'
         },
-        body: formData,
+        body: JSON.stringify({
+          model_image: modelImage,
+          garment_image: garmentImage,
+          category: category.toLowerCase(),
+          cover_feet: coverFeet,
+          adjust_hands: adjustHands,
+          restore_background: restoreBackground,
+          restore_clothes: restoreClothes,
+          flat_lay: flatLay,
+          long_top: longTop,
+        })
       });
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.message || 'API request failed');
-      }
-
-      if (result.success && result.code === 200 && result.response?.ouput_path_img) {
-        setResultImage(result.response.ouput_path_img);
+      const data = await response.json();
+      if (data.error) {
+        throw new Error(data.error.message || 'Failed to start generation');
       } else {
-        throw new Error('Invalid response format');
+        setPredictionId(data.id);
+        setStatus('processing');
       }
     } catch (error) {
-      console.error('Try-on error:', error);
-      Alert.alert(
-        'Processing Error',
-        'Failed to process virtual try-on. Please try again.',
-        [{ text: 'OK' }]
-      );
+      setError(error.message);
+      setStatus(null);
+      setIsGenerating(false);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const ImageDisplay = ({ image, type, style }) => {
-    if (!image?.uri) return null;
+  const checkStatus = async () => {
+    if (!predictionId) return;
 
-    return (
-      <View style={styles.imageDisplayContainer}>
-        <Image
-          source={{ uri: image.uri }}
-          style={[styles.image, style]}
-          onError={() => {
-            setImageErrors(prev => ({ ...prev, [type]: true }));
-            Alert.alert('Error', `Failed to load ${type} image`);
-          }}
-          resizeMode="contain"
-        />
-        {imageErrors[type] && (
-          <Text style={styles.errorText}>Failed to load image</Text>
-        )}
-      </View>
-    );
+    try {
+      const response = await fetch(`${API_URL}/status/${predictionId}`, {
+        headers: {
+          'Authorization': `Bearer ${API_KEY}`,
+        }
+      });
+
+      const data = await response.json();
+      setStatus(data.status);
+      if (data.status === 'completed') {
+        setResult(data.output[0]);
+        setIsGenerating(false);
+      } else if (data.status === 'failed') {
+        setError(data.error?.message || 'Generation failed');
+        setIsGenerating(false);
+      }
+    } catch (error) {
+      console.error('Status check error:', error);
+      setError('Failed to check status');
+      setIsGenerating(false);
+    }
   };
+
+  const downloadImage = async () => {
+    if (!result) {
+      Alert.alert('Error', 'No image to download');
+      return;
+    }
+
+    try {
+      const fileName = `VirtualTryOn_${Date.now()}.jpg`;
+      const fileUri = `${FileSystem.documentDirectory}${fileName}`;
+      
+      const downloadResult = await FileSystem.downloadAsync(result, fileUri);
+      
+      if (downloadResult.status === 200) {
+        Alert.alert('Success', `Image saved to ${fileUri}`);
+      } else {
+        throw new Error('Download failed');
+      }
+    } catch (error) {
+      console.error('Download error:', error);
+      Alert.alert('Error', 'Failed to download image. Please try again.');
+    }
+  };
+
+  const CategoryButton = ({ title, value }) => (
+    <TouchableOpacity
+      style={[styles.categoryButton, category === value && styles.selectedCategory]}
+      onPress={() => setCategory(value)}
+    >
+      <Text style={[styles.categoryButtonText, category === value && styles.selectedCategoryText]}>
+        {title}
+      </Text>
+    </TouchableOpacity>
+  );
+
+  const OptionSwitch = ({ label, value, onValueChange }) => (
+    <View style={styles.optionContainer}>
+      <Text style={styles.optionLabel}>{label}</Text>
+      <Switch value={value} onValueChange={onValueChange} />
+    </View>
+  );
 
   return (
     <ScrollView 
@@ -180,65 +213,88 @@ export default function VirtualTryOn() {
 
       <View style={styles.imageContainer}>
         <View style={styles.imageWrapper}>
-          <Text style={styles.label}>Person Image</Text>
-          <ImageDisplay 
-            image={personImage} 
-            type="person"
-            style={styles.image} 
-          />
+          <Text style={styles.label}>Model Image</Text>
+          {modelImage ? (
+            <Image source={{ uri: modelImage }} style={styles.image} resizeMode="contain" />
+          ) : (
+            <View style={[styles.image, styles.placeholderImage]} />
+          )}
           <TouchableOpacity
             style={styles.button}
-            onPress={() => selectImage(setPersonImage, 'personImage')}
+            onPress={() => selectImage(setModelImage, 'modelImage')}
           >
-            <Text style={styles.buttonText}>Select Person Image</Text>
+            <Text style={styles.buttonText}>Select Model Image</Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.imageWrapper}>
-          <Text style={styles.label}>Clothing Image</Text>
-          <ImageDisplay 
-            image={clothImage} 
-            type="cloth"
-            style={styles.image} 
-          />
+          <Text style={styles.label}>Garment Image</Text>
+          {garmentImage ? (
+            <Image source={{ uri: garmentImage }} style={styles.image} resizeMode="contain" />
+          ) : (
+            <View style={[styles.image, styles.placeholderImage]} />
+          )}
           <TouchableOpacity
             style={styles.button}
-            onPress={() => selectImage(setClothImage, 'clothImage')}
+            onPress={() => selectImage(setGarmentImage, 'garmentImage')}
           >
-            <Text style={styles.buttonText}>Select Clothing Image</Text>
+            <Text style={styles.buttonText}>Select Garment Image</Text>
           </TouchableOpacity>
         </View>
       </View>
 
+      <View style={styles.categoryContainer}>
+        <CategoryButton title="Top" value="tops" />
+        <CategoryButton title="Bottom" value="bottoms" />
+        <CategoryButton title="Full-body" value="one-pieces" />
+      </View>
+
+      <View style={styles.optionsContainer}>
+        <OptionSwitch label="Cover Feet" value={coverFeet} onValueChange={setCoverFeet} />
+        <OptionSwitch label="Adjust Hands" value={adjustHands} onValueChange={setAdjustHands} />
+        <OptionSwitch label="Restore Background" value={restoreBackground} onValueChange={setRestoreBackground} />
+        <OptionSwitch label="Restore Clothes" value={restoreClothes} onValueChange={setRestoreClothes} />
+        <OptionSwitch label="Flat Lay" value={flatLay} onValueChange={setFlatLay} />
+        <OptionSwitch label="Long Top" value={longTop} onValueChange={setLongTop} />
+      </View>
+
       <TouchableOpacity
         style={[
-          styles.button, 
-          styles.tryOnButton,
-          (loading || !personImage || !clothImage) && styles.disabledButton
+          styles.button,
+          styles.generateButton,
+          (isLoading || isGenerating || !modelImage || !garmentImage) && styles.disabledButton
         ]}
-        onPress={handleTryOn}
-        disabled={loading || !personImage || !clothImage}
+        onPress={handleGenerate}
+        disabled={isLoading || isGenerating || !modelImage || !garmentImage}
       >
         <Text style={styles.buttonText}>
-          {loading ? 'Processing...' : 'Try On'}
+          {isLoading ? 'Starting...' : isGenerating ? 'Generating...' : 'Generate Try-On'}
         </Text>
       </TouchableOpacity>
 
-      {loading && (
+      {(isLoading || isGenerating) && (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#0ea5e9" />
-          <Text style={styles.loadingText}>Processing your request...</Text>
+          <Text style={styles.loadingText}>
+            {isLoading ? 'Starting generation...' : 'Processing your request...'}
+          </Text>
         </View>
       )}
 
-      {resultImage && (
+      {error && (
+        <Text style={styles.errorText}>{error}</Text>
+      )}
+
+      {result && (
         <View style={styles.resultContainer}>
           <Text style={styles.label}>Result</Text>
-          <ImageDisplay 
-            image={{ uri: resultImage }} 
-            type="result"
-            style={styles.resultImage} 
-          />
+          <Image source={{ uri: result }} style={styles.resultImage} resizeMode="contain" />
+          <TouchableOpacity
+            style={[styles.button, styles.downloadButton]}
+            onPress={downloadImage}
+          >
+            <Text style={styles.buttonText}>Download Image</Text>
+          </TouchableOpacity>
         </View>
       )}
     </ScrollView>
@@ -267,14 +323,6 @@ const styles = StyleSheet.create({
     flex: 1,
     marginHorizontal: 5,
   },
-  imageDisplayContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 5,
-    marginBottom: 10,
-  },
   label: {
     fontSize: 16,
     fontWeight: 'bold',
@@ -286,6 +334,10 @@ const styles = StyleSheet.create({
     height: (SCREEN_WIDTH - 60) / 2,
     borderRadius: 8,
     backgroundColor: '#f8f8f8',
+    marginBottom: 10,
+  },
+  placeholderImage: {
+    backgroundColor: '#e0e0e0',
   },
   button: {
     backgroundColor: '#0ea5e9',
@@ -293,24 +345,60 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     marginBottom: 10,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-  },
-  disabledButton: {
-    backgroundColor: '#93c5fd',
-    opacity: 0.7,
   },
   buttonText: {
     color: 'white',
     fontWeight: 'bold',
     fontSize: 14,
   },
-  tryOnButton: {
+  generateButton: {
     marginTop: 20,
     backgroundColor: '#0284c7',
+  },
+  downloadButton: {
+    marginTop: 10,
+    backgroundColor: '#10b981',
+  },
+  disabledButton: {
+    backgroundColor: '#93c5fd',
+    opacity: 0.7,
+  },
+  categoryContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  categoryButton: {
+    flex: 1,
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#0ea5e9',
+    alignItems: 'center',
+    marginHorizontal: 5,
+  },
+  selectedCategory: {
+    backgroundColor: '#0ea5e9',
+  },
+  categoryButtonText: {
+    color: '#0ea5e9',
+    fontWeight: 'bold',
+  },
+  selectedCategoryText: {
+    color: 'white',
+  },
+  optionsContainer: {
+    marginBottom: 20,
+  },
+  optionContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  optionLabel: {
+    fontSize: 14,
+    color: '#333',
   },
   loadingContainer: {
     marginTop: 20,
@@ -332,7 +420,9 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: '#ef4444',
-    fontSize: 12,
-    marginTop: 5,
+    fontSize: 14,
+    marginTop: 10,
+    textAlign: 'center',
   },
 });
+

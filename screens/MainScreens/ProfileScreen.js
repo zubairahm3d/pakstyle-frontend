@@ -1,25 +1,36 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, Image, TouchableOpacity, Alert } from "react-native";
+import { View, Text, StyleSheet, Image, TouchableOpacity, Alert, ScrollView, SafeAreaView, Linking } from "react-native";
 import { createDrawerNavigator } from "@react-navigation/drawer";
 import ChangePasswordScreen from "./ChangePasswordScreen";
+import EditProfileScreen from './EditProfileScreen';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { API_URL } from '@env';
 
 const Drawer = createDrawerNavigator();
 
-const ProfileScreen = ({ navigation, user }) => {
+const ProfileContent = ({ user, navigation }) => {
   const [profilePicture, setProfilePicture] = useState(user.profilePicture);
 
   const handleLogout = () => {
+    // Add logout logic here
     navigation.navigate("Main");
   };
 
   const handleChangeProfilePicture = async () => {
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    // Request permission for both camera and media library
+    const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
+    const mediaLibraryPermission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     
-    if (permissionResult.granted === false) {
-      Alert.alert("Permission Required", "You need to allow access to your photos to change your profile picture.");
+    if (cameraPermission.status !== 'granted' || mediaLibraryPermission.status !== 'granted') {
+      Alert.alert(
+        "Permissions Required",
+        "You need to allow access to your camera and photo library to change your profile picture.",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Settings", onPress: () => Linking.openSettings() }
+        ]
+      );
       return;
     }
 
@@ -69,45 +80,135 @@ const ProfileScreen = ({ navigation, user }) => {
   };
 
   return (
-    <Drawer.Navigator initialRouteName="Profile ">
-      <Drawer.Screen name="Profile " options={{ title: "Profile " }}>
-        {() => (
-          <View style={styles.container}>
-            <View style={styles.profilePicContainer}>
-              <Image
-                style={styles.profilePic}
-                source={{ uri: profilePicture }}
-              />
-              <TouchableOpacity
-                style={styles.changeProfilePicButton}
-                onPress={handleChangeProfilePicture}
-              >
-                <Ionicons name="camera" size={24} color="white" />
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.nameText}>{user.name}</Text>
-            <Text style={styles.locationText}>{user.location}</Text>
-            <Text style={styles.usernameText}>
-              Username: {user.username}
-            </Text>
-            <Text style={styles.emailText}>
-              Email: {user.email}
-            </Text>
+    <SafeAreaView style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.header}>
+          <View style={styles.profilePicContainer}>
+            <Image
+              style={styles.profilePic}
+              source={{ uri: profilePicture }}
+            />
             <TouchableOpacity
-              onPress={handleLogout}
-              style={styles.logoutButton}
+              style={styles.changeProfilePicButton}
+              onPress={handleChangeProfilePicture}
             >
-              <Text style={styles.buttonText}>Logout</Text>
+              <Ionicons name="camera" size={20} color="#ffffff" />
             </TouchableOpacity>
           </View>
-        )}
+          <Text style={styles.nameText}>{user.name}</Text>
+          <Text style={styles.usernameText}>@{user.username}</Text>
+        </View>
+
+        <View style={styles.infoSection}>
+          <View style={styles.infoItem}>
+            <Ionicons name="mail-outline" size={24} color="#6B7280" style={styles.infoIcon} />
+            <Text style={styles.infoText}>{user.email}</Text>
+          </View>
+          <View style={styles.infoItem}>
+            <Ionicons name="location-outline" size={24} color="#6B7280" style={styles.infoIcon} />
+            <Text style={styles.infoText}>{user.address?.country || 'Country not set'}</Text>
+          </View>
+          <View style={styles.infoItem}>
+            <Ionicons name="call-outline" size={24} color="#6B7280" style={styles.infoIcon} />
+            <Text style={styles.infoText}>{user.phone || 'Phone not set'}</Text>
+          </View>
+        </View>
+
+        <View style={styles.actionsSection}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => navigation.navigate('ChangePassword')}
+          >
+            <Ionicons name="key-outline" size={24} color="#4F46E5" style={styles.actionIcon} />
+            <Text style={styles.actionText}>Change Password</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => navigation.navigate('EditProfile', { user })}
+          >
+            <Ionicons name="create-outline" size={24} color="#4F46E5" style={styles.actionIcon} />
+            <Text style={styles.actionText}>Edit Profile</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.actionButton, styles.logoutButton]}
+            onPress={handleLogout}
+          >
+            <Ionicons name="log-out-outline" size={24} color="#EF4444" style={styles.actionIcon} />
+            <Text style={[styles.actionText, styles.logoutText]}>Logout</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+};
+
+const ProfileScreen = ({ navigation, user }) => {
+  return (
+    <Drawer.Navigator 
+      initialRouteName="Profile " 
+      screenOptions={{
+        drawerStyle: {
+          backgroundColor: '#ffffff',
+          width: 240,
+        },
+        drawerLabelStyle: {
+          color: '#4B5563',
+        },
+      }}
+    >
+      <Drawer.Screen 
+        name="Profile " 
+        options={{
+          title: "My Profile",
+          headerStyle: {
+            backgroundColor: '#ffffff',
+            elevation: 0,
+            shadowOpacity: 0,
+          },
+          headerTintColor: '#111827',
+          headerTitleStyle: {
+            fontWeight: 'bold',
+          },
+        }}
+      >
+        {() => <ProfileContent user={user} navigation={navigation} />}
       </Drawer.Screen>
 
       <Drawer.Screen
         name="ChangePassword"
-        options={{ title: "Change Password" }}
+        options={{
+          title: "Change Password",
+          headerStyle: {
+            backgroundColor: '#ffffff',
+            elevation: 0,
+            shadowOpacity: 0,
+          },
+          headerTintColor: '#111827',
+          headerTitleStyle: {
+            fontWeight: 'bold',
+          },
+        }}
       >
         {() => <ChangePasswordScreen user={user} />}
+      </Drawer.Screen>
+      <Drawer.Screen
+        name="EditProfile"
+        options={{
+          title: "Edit Profile",
+          headerStyle: {
+            backgroundColor: '#ffffff',
+            elevation: 0,
+            shadowOpacity: 0,
+          },
+          headerTintColor: '#111827',
+          headerTitleStyle: {
+            fontWeight: 'bold',
+          },
+        }}
+      >
+        {(props) => <EditProfileScreen {...props} user={user} />}
       </Drawer.Screen>
     </Drawer.Navigator>
   );
@@ -116,56 +217,108 @@ const ProfileScreen = ({ navigation, user }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#F9FAFB',
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  header: {
     alignItems: 'center',
-    justifyContent: 'center',
     padding: 20,
+    backgroundColor: '#ffffff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
   profilePicContainer: {
     position: 'relative',
-    marginBottom: 20,
+    marginBottom: 15,
   },
   profilePic: {
-    width: 150,
-    height: 150,
-    borderRadius: 75,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 3,
+    borderColor: '#E5E7EB',
   },
   changeProfilePicButton: {
     position: 'absolute',
     bottom: 0,
     right: 0,
-    backgroundColor: '#0ea5e9',
+    backgroundColor: '#4F46E5',
     borderRadius: 20,
     padding: 8,
   },
   nameText: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  locationText: {
-    fontSize: 18,
-    color: 'gray',
-    marginBottom: 20,
+    color: '#111827',
+    marginBottom: 5,
   },
   usernameText: {
     fontSize: 16,
-    marginBottom: 10,
+    color: '#6B7280',
   },
-  emailText: {
-    fontSize: 16,
+  infoSection: {
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    margin: 15,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  infoItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 20,
   },
-  logoutButton: {
-    backgroundColor: '#0ea5e9',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 5,
+  infoIcon: {
+    marginRight: 15,
   },
-  buttonText: {
-    color: 'white',
+  infoText: {
     fontSize: 16,
-    fontWeight: 'bold',
+    color: '#4B5563',
+  },
+  actionsSection: {
+    padding: 15,
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 15,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  actionIcon: {
+    marginRight: 15,
+  },
+  actionText: {
+    color: '#4B5563',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  logoutButton: {
+    borderWidth: 1,
+    borderColor: '#EF4444',
+  },
+  logoutText: {
+    color: '#EF4444',
   },
 });
 
 export default ProfileScreen;
+

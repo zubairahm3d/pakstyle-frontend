@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useState, useContext, useRef, useEffect } from "react";
 import {
   View,
@@ -10,14 +8,17 @@ import {
   ScrollView,
   Dimensions,
   Animated,
+  Alert,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { CartContext } from "../Context/CartContext";
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 
 const { width } = Dimensions.get("window");
 
-const ItemScreen = ({ route, navigation }) => {
+const ItemScreen = ({ route }) => {
+  const navigation = useNavigation();
   const { item, user } = route.params;
   const [selectedSize, setSelectedSize] = useState(item.sizes[0]);
   const [selectedColor, setSelectedColor] = useState(item.colors[0]);
@@ -44,13 +45,31 @@ const ItemScreen = ({ route, navigation }) => {
   }, []);
 
   const handleAddToCart = () => {
-    addToCart({
+    const cartItem = {
       ...item,
       selectedSize,
       selectedColor,
       quantity: selectedQuantity,
+    };
+    
+    addToCart(cartItem);
+    Alert.alert(
+      "Success",
+      "Item added to cart successfully!",
+      [{ text: "OK", onPress: () => console.log("OK Pressed") }]
+    );
+  };
+
+  const handleTryOn = () => {
+    if (!item.images || item.images.length === 0) {
+      Alert.alert("Error", "No image available for virtual try-on");
+      return;
+    }
+
+    navigation.navigate("Virtual Try-On", {
+      garmentImage: item.images[0],
+      garmentName: item.name,
     });
-    // Show a confirmation message or navigate to cart
   };
 
   return (
@@ -62,18 +81,31 @@ const ItemScreen = ({ route, navigation }) => {
         ]}
       >
         <View style={styles.imageContainer}>
-          <Image style={styles.image} source={{ uri: item.images[0] }} />
+          <Image 
+            style={styles.image} 
+            source={{ uri: item.images[0] }}
+            resizeMode="cover"
+          />
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
             <Ionicons name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.tryOnButton}
+            onPress={handleTryOn}
+          >
+            <Text style={styles.tryOnButtonText}>Try On</Text>
+            <Ionicons name="camera-outline" size={20} color="#fff" style={styles.tryOnIcon} />
+          </TouchableOpacity>
         </View>
+
         <View style={styles.detailsContainer}>
           <Text style={styles.name}>{item.name}</Text>
           <Text style={styles.price}>Rs. {item.price.toLocaleString()}</Text>
           <Text style={styles.description}>{item.description}</Text>
+
           <View style={styles.optionsContainer}>
             <OptionPicker
               label="Size"
@@ -91,12 +123,13 @@ const ItemScreen = ({ route, navigation }) => {
               label="Quantity"
               selectedValue={selectedQuantity}
               onValueChange={setSelectedQuantity}
-              items={[...Array(10).keys()].map((num) => ({
-                label: `${num + 1}`,
-                value: num + 1,
+              items={[...Array(10)].map((_, i) => ({
+                label: (i + 1).toString(),
+                value: i + 1,
               }))}
             />
           </View>
+
           <TouchableOpacity
             style={styles.addToCartButton}
             onPress={handleAddToCart}
@@ -121,7 +154,7 @@ const OptionPicker = ({ label, selectedValue, onValueChange, items }) => (
         {items.map((item) => (
           <Picker.Item
             key={item.value || item}
-            label={item.label || item}
+            label={item.label || item.toString()}
             value={item.value || item}
           />
         ))}
@@ -146,15 +179,47 @@ const styles = StyleSheet.create({
   image: {
     width: "100%",
     height: "100%",
-    resizeMode: "cover",
+    backgroundColor: "#f0f0f0",
   },
   backButton: {
     position: "absolute",
-    top: 40,
+    top: 44,
     left: 20,
     backgroundColor: "rgba(0,0,0,0.5)",
     borderRadius: 20,
-    padding: 8,
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1,
+  },
+  tryOnButton: {
+    position: "absolute",
+    bottom: 20,
+    right: 20,
+    backgroundColor: "#0ea5e9",
+    borderRadius: 25,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  tryOnButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+    marginRight: 8,
+  },
+  tryOnIcon: {
+    marginLeft: 4,
   },
   detailsContainer: {
     backgroundColor: "#fff",
@@ -164,22 +229,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 30,
     paddingBottom: 40,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: -3,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4.65,
+    elevation: 6,
   },
   name: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#2c3e50",
+    color: "#1e293b",
     marginBottom: 10,
   },
   price: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#27ae60",
+    color: "#0ea5e9",
     marginBottom: 15,
   },
   description: {
     fontSize: 16,
-    color: "#7f8c8d",
+    color: "#64748b",
     marginBottom: 20,
     lineHeight: 24,
   },
@@ -192,31 +265,35 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   optionLabel: {
-    fontSize: 18,
-    color: "#2c3e50",
+    fontSize: 16,
+    color: "#475569",
     marginRight: 10,
     width: 80,
   },
   pickerContainer: {
     flex: 1,
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: "#e2e8f0",
     borderRadius: 10,
     overflow: "hidden",
+    backgroundColor: "#f8fafc",
   },
   picker: {
     height: 50,
     width: "100%",
   },
   addToCartButton: {
-    backgroundColor: "#3498db",
+    backgroundColor: "#0ea5e9",
     paddingVertical: 15,
     borderRadius: 10,
     alignItems: "center",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
     shadowOpacity: 0.1,
-    shadowRadius: 5,
+    shadowRadius: 3,
     elevation: 5,
   },
   addToCartButtonText: {

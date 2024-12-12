@@ -1,61 +1,119 @@
-import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  Image,
-  TouchableOpacity,
-  ScrollView,
-} from "react-native";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { createStackNavigator } from "@react-navigation/stack"; // Import Stack Navigator
-import BrandProfile from "./BrandProfile";
-import ShowOurCollections from "./ShowOurCollections";
-import AddNewItem from "./AddNewItem";
-import BrandNewItems from "./BrandNewItems";
-import BrandPopularItems from "./BrandPopularItems";
-import BrandItem from "./BrandItem";
-import BrandOrder from "./BrandOrder";
-import BrandOrderDetail from "./BrandOrderDetail"; // Import the detail screen
-import clothesData from "../../data/clothesData.json";
-import { useNavigation } from "@react-navigation/native";
+import React from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createStackNavigator } from '@react-navigation/stack';
+import { useNavigation } from '@react-navigation/native';
+import axios from 'axios';
+import { API_URL } from '@env';
+
+import BrandProfile from './BrandProfile';
+import ShowOurCollections from './ShowOurCollections';
+import AddNewItem from './AddNewItem';
+import BrandNewItems from './BrandNewItems';
+import BrandPopularItems from './BrandPopularItems';
+import BrandItem from './BrandItem';
+import BrandOrder from './BrandOrder';
+import BrandOrderDetail from './BrandOrderDetail';
 
 const Tab = createBottomTabNavigator();
-const Stack = createStackNavigator(); // Create Stack Navigator
+const Stack = createStackNavigator();
+
+const CollectionsStack = ({ brandId }) => (
+  <Stack.Navigator>
+    <Stack.Screen 
+      name="Collections" 
+      component={ShowOurCollections}
+      initialParams={{ brandId }}
+    />
+    <Stack.Screen name="Brand Item" component={BrandItem} />
+  </Stack.Navigator>
+);
+
+const HomeScreenContent = ({ user }) => {
+  const [topSalesItems, setTopSalesItems] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const navigation = useNavigation();
+
+  React.useEffect(() => {
+    fetchTopSalesItems();
+  }, []);
+
+  const fetchTopSalesItems = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/products/top-sales?brandId=${user._id}`);
+      setTopSalesItems(response.data);
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
+
+  return (
+    <ScrollView contentContainerStyle={styles.container}>
+      <TouchableOpacity
+        style={styles.box}
+        onPress={() => navigation.navigate('Our Collections')}
+      >
+        <Text style={styles.boxText}>Our Collections</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.box}
+        onPress={() => navigation.navigate('BrandPopularItems', { brandId: user._id })}
+      >
+        <Text style={styles.boxText}>Popular Collection</Text>
+      </TouchableOpacity>
+      <View style={styles.salesContainer}>
+        <Text style={styles.salesTitle}>Top Sales</Text>
+        {topSalesItems.map((item) => (
+          <View key={item._id} style={styles.itemContainer}>
+            <Image source={{ uri: item.images[0] }} style={styles.image} />
+            <View style={styles.textContainer}>
+              <Text style={styles.itemName}>{item.name}</Text>
+              <Text style={styles.itemSales}>Sales: {item.sales}</Text>
+            </View>
+          </View>
+        ))}
+      </View>
+    </ScrollView>
+  );
+};
 
 const BrandHomeScreen = ({ route }) => {
-  const [clothes, setClothes] = useState([]);
   const user = route.params.user;
-
-  useEffect(() => {
-    setClothes(clothesData);
-  }, []);
 
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
-          if (route.name === "Dashboard") {
+          if (route.name === 'Dashboard') {
             iconName = focused
-              ? require("../../assets/icons/home_selected.png")
-              : require("../../assets/icons/home_unselected.png");
-          } else if (route.name === "Show Our Collections") {
+              ? require('../../assets/icons/home_selected.png')
+              : require('../../assets/icons/home_unselected.png');
+          } else if (route.name === 'Our Collections') {
             iconName = focused
-              ? require("../../assets/icons/browse_selected.png")
-              : require("../../assets/icons/browse_unselected.png");
-          } else if (route.name === "Add New Item") {
+              ? require('../../assets/icons/browse_selected.png')
+              : require('../../assets/icons/browse_unselected.png');
+          } else if (route.name === 'Add New Item') {
             iconName = focused
-              ? require("../../assets/icons/add_selected.png")
-              : require("../../assets/icons/add_unselected.png");
-          } else if (route.name === "Brand Profile") {
+              ? require('../../assets/icons/add_selected.png')
+              : require('../../assets/icons/add_unselected.png');
+          } else if (route.name === 'Brand Profile') {
             iconName = focused
-              ? require("../../assets/icons/profile_selected.png")
-              : require("../../assets/icons/profile_unselected.png");
-          } else if (route.name === "Orders") {
+              ? require('../../assets/icons/profile_selected.png')
+              : require('../../assets/icons/profile_unselected.png');
+          } else if (route.name === 'Orders') {
             iconName = focused
-              ? require("../../assets/icons/order_selected.png")
-              : require("../../assets/icons/order_unselected.png");
+              ? require('../../assets/icons/order_selected.png')
+              : require('../../assets/icons/order_unselected.png');
           }
           return (
             <Image
@@ -67,18 +125,20 @@ const BrandHomeScreen = ({ route }) => {
       })}
     >
       <Tab.Screen name="Dashboard">
-        {() => <HomeScreenContent clothes={clothes} user={user} />}
+        {() => <HomeScreenContent user={user} />}
       </Tab.Screen>
-      <Tab.Screen name="Show Our Collections" component={ShowOurCollections} />
-      <Tab.Screen name="Add New Item" component={AddNewItem} />
-
-      {/* Stack Navigator for Orders */}
+      <Tab.Screen name="Our Collections" options={{ headerShown: false }}>
+        {() => <CollectionsStack brandId={user._id} />}
+      </Tab.Screen>
+      <Tab.Screen name="Add New Item">
+        {() => <AddNewItem brandId={user._id} brandName={user.name} />}
+      </Tab.Screen>
       <Tab.Screen name="Orders">
         {() => (
           <Stack.Navigator>
             <Stack.Screen
               name="BrandOrder"
-              options={{ headerShown: false }} // Hide header for BrandOrder screen
+              options={{ headerShown: false }}
             >
               {({ navigation }) => (
                 <BrandOrder user={user} navigation={navigation} />
@@ -91,88 +151,36 @@ const BrandHomeScreen = ({ route }) => {
           </Stack.Navigator>
         )}
       </Tab.Screen>
-
       <Tab.Screen name="Brand Profile" options={{ headerShown: false }}>
         {({ navigation }) => (
           <BrandProfile user={user} navigation={navigation} />
         )}
       </Tab.Screen>
-      <Tab.Screen
-        name="Brand's Newest Collection"
-        component={BrandNewItems}
-        options={{ headerShown: false, tabBarButton: () => null }}
-      />
-      <Tab.Screen
-        name="Brand's Popular Collection"
-        component={BrandPopularItems}
-        options={{ headerShown: false, tabBarButton: () => null }}
-      />
-      <Tab.Screen
-        name="Brand Item"
-        component={BrandItem}
-        options={{ headerShown: false, tabBarButton: () => null }}
-      />
     </Tab.Navigator>
   );
 };
 
-const HomeScreenContent = ({ clothes, user }) => {
-  const navigation = useNavigation();
-  const topSalesItems = clothes
-    .filter((item) => item.brand === user.name)
-    .sort((a, b) => b.sales - a.sales)
-    .slice(0, 3);
-
-  return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <TouchableOpacity
-        style={styles.box}
-        onPress={() => navigation.navigate("Brand's Newest Collection")}
-      >
-        <Text style={styles.boxText}>Newest Collection</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.box}
-        onPress={() => navigation.navigate("Brand's Popular Collection")}
-      >
-        <Text style={styles.boxText}>Popular Collection</Text>
-      </TouchableOpacity>
-      <View style={styles.salesContainer}>
-        <Text style={styles.salesTitle}>Top Sales</Text>
-        {topSalesItems.map((item) => (
-          <View key={item.id} style={styles.itemContainer}>
-            <Image source={{ uri: item.image }} style={styles.image} />
-            <View style={styles.textContainer}>
-              <Text style={styles.itemName}>{item.name}</Text>
-              <Text style={styles.itemSales}>Sales: {item.sales}</Text>
-            </View>
-          </View>
-        ))}
-      </View>
-    </ScrollView>
-  );
-};
-
-// Add your styles here
-
-// export default BrandHomeScreen;
-
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    backgroundColor: "#F0F0F0",
-    alignItems: "center",
+    backgroundColor: '#F0F0F0',
+    alignItems: 'center',
     paddingVertical: 20,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   box: {
-    width: "80%",
+    width: '80%',
     height: 150,
     margin: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#fff",
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
     borderRadius: 10,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -180,16 +188,16 @@ const styles = StyleSheet.create({
   },
   boxText: {
     fontSize: 20,
-    fontWeight: "bold",
-    color: "#333",
+    fontWeight: 'bold',
+    color: '#333',
   },
   salesContainer: {
-    width: "90%",
+    width: '90%',
     padding: 20,
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
     borderRadius: 10,
     marginTop: 20,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -197,14 +205,14 @@ const styles = StyleSheet.create({
   },
   salesTitle: {
     fontSize: 24,
-    fontWeight: "bold",
-    color: "#333",
+    fontWeight: 'bold',
+    color: '#333',
     marginBottom: 15,
-    textAlign: "center",
+    textAlign: 'center',
   },
   itemContainer: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 15,
   },
   image: {
@@ -218,12 +226,12 @@ const styles = StyleSheet.create({
   },
   itemName: {
     fontSize: 18,
-    fontWeight: "bold",
-    color: "#333",
+    fontWeight: 'bold',
+    color: '#333',
   },
   itemSales: {
     fontSize: 16,
-    color: "#666",
+    color: '#666',
   },
 });
 

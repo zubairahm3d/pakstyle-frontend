@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -10,7 +10,7 @@ import {
   Image,
 } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import { useFocusEffect } from "@react-navigation/native"; // Import useFocusEffect
+import { useFocusEffect } from "@react-navigation/native";
 import { API_URL } from "@env";
 
 const BrandOrder = ({ user, navigation }) => {
@@ -19,41 +19,48 @@ const BrandOrder = ({ user, navigation }) => {
   const [users, setUsers] = useState([]);
   const userId = user._id;
 
-  // Use useFocusEffect to fetch data whenever the screen is focused
   useFocusEffect(
     React.useCallback(() => {
-      const fetchOrdersAndUsers = async () => {
-        setLoading(true); // Start loading
+      const fetchData = async () => {
+        setLoading(true);
         try {
-          console.log(`IP`);
+          // Fetch all orders
           const ordersResponse = await fetch(`${API_URL}/orders`);
           if (!ordersResponse.ok) throw new Error("Failed to fetch orders");
-          const ordersData = await ordersResponse.json();
+          const allOrders = await ordersResponse.json();
 
+          // Fetch all products
+          const productsResponse = await fetch(`${API_URL}/products`);
+          if (!productsResponse.ok) throw new Error("Failed to fetch products");
+          const allProducts = await productsResponse.json();
+
+          // Fetch all users
           const usersResponse = await fetch(`${API_URL}/users`);
           if (!usersResponse.ok) throw new Error("Failed to fetch users");
           const usersData = await usersResponse.json();
 
-          // Filter brand orders to exclude those that are Shipped or Canceled
-          const brandOrders = ordersData.filter(
-            (order) =>
-              order.items.some((item) => item.brandId === userId) &&
-              order.status !== "Shipped" &&
-              order.status !== "Canceled"
+          // Filter orders based on products belonging to the current user (brand)
+          const brandProducts = allProducts.filter(product => product.brandId === userId);
+          const brandProductIds = new Set(brandProducts.map(product => product._id));
+
+          const filteredOrders = allOrders.filter(order => 
+            order.items.some(item => brandProductIds.has(item.productId)) &&
+            order.status !== "Shipped" &&
+            order.status !== "Canceled"
           );
 
-          setOrders(brandOrders);
+          setOrders(filteredOrders);
           setUsers(usersData);
         } catch (error) {
           console.error(error);
-          Alert.alert("Error", "There was a problem fetching orders or users.");
+          Alert.alert("Error", "There was a problem fetching data.");
         } finally {
-          setLoading(false); // Stop loading
+          setLoading(false);
         }
       };
 
-      fetchOrdersAndUsers();
-    }, [userId]) // Dependency array
+      fetchData();
+    }, [userId])
   );
 
   const handleOrderPress = (order, userInfo) => {
@@ -79,7 +86,6 @@ const BrandOrder = ({ user, navigation }) => {
       {orders.length === 0 ? (
         <View style={styles.noOrdersContainer}>
           <Ionicons name="cart-outline" size={64} color="#6200ee" />
-
           <Text style={styles.noOrdersText}>No orders found.</Text>
         </View>
       ) : (
@@ -257,3 +263,4 @@ const styles = StyleSheet.create({
 });
 
 export default BrandOrder;
+

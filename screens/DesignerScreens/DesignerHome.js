@@ -1,14 +1,63 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
-// import clothesData from "../../data/clothesData.json"; // Import the JSON file
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  Image, 
+  TouchableOpacity,
+  BackHandler,
+  Alert
+} from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import DesginerProfile from "./DesignerProfile";
 import DesignerPortfolio from "./DesignerPortfolio";
 import DesignerOrder from "./DesignerOrder";
+import ChatScreen from './ChatScreen';
+import ConversationDetailScreen from './ConversationDetailScreen';
+import DesignerOrderDetail from "./DesignerOrderDetail";
 
-import { useNavigation } from "@react-navigation/native";
 
 const Tab = createBottomTabNavigator();
+
+const HomeScreenContent = () => {
+  const navigation = useNavigation();
+
+  useFocusEffect(
+    React.useCallback(() => {
+      const onBackPress = () => {
+        Alert.alert(
+          'Exit App',
+          'Are you sure you want to exit?',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'OK', onPress: () => BackHandler.exitApp() }
+          ],
+          { cancelable: false }
+        );
+        return true;
+      };
+
+      BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+      return () => {
+        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+      };
+    }, [])
+  );
+
+  return (
+    <View style={styles.container}>
+      <TouchableOpacity style={styles.box}>
+        <Text style={styles.boxText}>Newest Collection</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.box}>
+        <Text style={styles.boxText}>Popular Collection</Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
 
 const BrandHomeScreen = ({ navigation, route }) => {
   return (
@@ -44,73 +93,73 @@ const BrandHomeScreen = ({ navigation, route }) => {
         },
       })}
     >
-      <Tab.Screen name="Dashboard">{() => <HomeScreenContent />}</Tab.Screen>
-      {/* <Tab.Screen
-        name="Portfolio"
-        component={DesignerPortfolio}
-        options={{ headerShown: false }} // Hide header for Browse screen
-      /> */}
+      <Tab.Screen 
+        name="Dashboard" 
+        options={{
+          headerRight: () => (
+            <TouchableOpacity
+              style={styles.headerChatIcon}
+              onPress={() => navigation.navigate('Chat', { userId: route.params.user._id })}
+            >
+              <Ionicons name="chatbubble-ellipses" size={24} color="#3498db" />
+            </TouchableOpacity>
+          ),
+        }}
+      >
+        {() => <HomeScreenContent />}
+      </Tab.Screen>
 
-      <Tab.Screen name="Portfolio" options={{ headerShown: false }}>
+      <Tab.Screen 
+        name="Portfolio" 
+        options={{ headerShown: false }}
+      >
         {({ navigation }) => (
           <DesignerPortfolio user={route.params.user} navigation={navigation} />
         )}
       </Tab.Screen>
 
-      <Tab.Screen name="Orders" component={DesignerOrder} />
+      <Tab.Screen 
+        name="Orders" 
+        options={{ headerShown: false }}
+      >
+        {({ navigation }) => (
+          <DesignerOrder user={route.params.user} navigation={navigation} />
+        )}
+      </Tab.Screen>
 
-      <Tab.Screen name="Profile" options={{ headerShown: false }}>
+      <Tab.Screen 
+        name="Profile" 
+        options={{ headerShown: false }}
+      >
         {({ navigation }) => (
           <DesginerProfile user={route.params.user} navigation={navigation} />
         )}
       </Tab.Screen>
 
-      {/* <Tab.Screen
-        name="Profile"
-        component={DesginerProfile}
-        options={{ headerShown: false }} // Hide header for Profile screen
-      /> */}
-      {/* since we are hiding buttons of below screens from the tab bar
-    thats why we are moving to these below screens using navigations */}
-      {/* <Tab.Screen
-        name="Brand's Newest Collection"
-        // component={BrandNewItems}
-        options={({ headerShown: false }, { tabBarButton: () => null })} // Hide from tab bar
-      />
       <Tab.Screen
-        name="Brand's Popular Collection"
-        component={BrandPopularItems}
-        options={({ headerShown: false }, { tabBarButton: () => null })}
-        // Hide from tab bar
-      />
+        name="Chat"
+        options={{ headerShown: false, tabBarButton: () => null }}
+      >
+        {(props) => <ChatScreen {...props} user={route.params.user} />}
+      </Tab.Screen>
+
       <Tab.Screen
-        name="Brand Item"
-        component={BrandItem}
-        options={({ headerShown: false }, { tabBarButton: () => null })}
-        // Hide from tab bar
-      /> */}
+        name="ConversationDetail"
+        options={{ headerShown: false, tabBarButton: () => null }}
+      >
+        {(props) => <ConversationDetailScreen {...props} user={route.params.user} />}
+      </Tab.Screen>
+
+      <Tab.Screen
+        name="DesignerOrderDetail"
+        options={{ 
+          headerShown: true,
+          title: 'Order Details',
+          tabBarButton: () => null 
+        }}
+        component={DesignerOrderDetail}
+      />
     </Tab.Navigator>
-  );
-};
-
-const HomeScreenContent = ({}) => {
-  const navigation = useNavigation();
-
-  return (
-    <View style={styles.container}>
-      <TouchableOpacity
-        style={styles.box}
-        // onPress={() => navigation.navigate("Brand's Newest Collection")} // Navigate to NewItems screen
-      >
-        <Text style={styles.boxText}>Newest Collection</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.box}
-        // onPress={() => navigation.navigate("Brand's Popular Collection")} // Navigate to MostSearchedItems screen
-      >
-        <Text style={styles.boxText}>Popular Collection</Text>
-      </TouchableOpacity>
-    </View>
   );
 };
 
@@ -168,6 +217,9 @@ const styles = StyleSheet.create({
   boxText: {
     fontSize: 20,
     fontWeight: "bold",
+  },
+  headerChatIcon: {
+    marginRight: 15,
   },
 });
 

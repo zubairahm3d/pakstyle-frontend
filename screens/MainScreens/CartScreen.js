@@ -10,6 +10,8 @@ import {
 import { CartContext } from "../Context/CartContext";
 import { createStackNavigator } from "@react-navigation/stack";
 import CheckOutScreen from "./CheckOutScreen";
+import OrderHistoryScreen from "./OrderHistoryScreen";
+import { Ionicons } from '@expo/vector-icons';
 
 const Stack = createStackNavigator();
 
@@ -26,78 +28,130 @@ const CartScreen = ({ user, navigation }) => {
     0
   );
 
+  const CartContent = () => (
+    <ScrollView contentContainerStyle={styles.scrollViewContent}>
+      {cartItems.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Image
+            source={require("../../assets/icons/empty_cart.png")}
+            style={styles.emptyIcon}
+          />
+          <Text style={styles.emptyText}>Your cart is empty</Text>
+        </View>
+      ) : (
+        <>
+          {cartItems.map((item, index) => (
+            <View key={index} style={styles.itemContainer}>
+              <Image
+                source={{ uri: item.images[0] }}
+                style={styles.itemImage}
+              />
+              <View style={styles.itemDetails}>
+                <Text style={styles.name}>{item.name}</Text>
+                <Text style={styles.price}>{item.price}</Text>
+                <Text style={styles.selectedDetails}>
+                  Size: {item.selectedSize} | Color: {item.selectedColor}{" "}
+                  | Quantity: {item.quantity}
+                </Text>
+                <TouchableOpacity
+                  onPress={() => removeFromCart(item.id)}
+                  style={styles.removeButton}
+                >
+                  <Text style={styles.removeButtonText}>Remove</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ))}
+          <View style={styles.totalContainer}>
+            <Text style={styles.totalText}>
+              Total: ₨ {totalAmount.toFixed(2)}
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={styles.checkoutButton}
+            onPress={() =>
+              navigation.navigate("CheckOut", {
+                user: user,
+                cartItems: cartItems,
+              })
+            }
+          >
+            <Text style={styles.checkoutButtonText}>Checkout</Text>
+          </TouchableOpacity>
+        </>
+      )}
+    </ScrollView>
+  );
+
   return (
     <Stack.Navigator>
-      {/* Cart Screen */}
-      <Stack.Screen name="Cart " options={{ headerShown: false }}>
-        {() => (
-          <ScrollView contentContainerStyle={styles.scrollViewContent}>
-            {cartItems.length === 0 ? (
-              <View style={styles.emptyContainer}>
-                <Image
-                  source={require("../../assets/icons/empty_cart.png")}
-                  style={styles.emptyIcon}
-                />
-                <Text style={styles.emptyText}>Your cart is empty</Text>
-              </View>
-            ) : (
-              <>
-                {cartItems.map((item, index) => (
-                  <View key={index} style={styles.itemContainer}>
-                    <Image
-                      source={{ uri: item.images[0] }}
-                      style={styles.itemImage}
-                    />
-                    <View style={styles.itemDetails}>
-                      <Text style={styles.name}>{item.name}</Text>
-                      <Text style={styles.price}>{item.price}</Text>
-                      <Text style={styles.selectedDetails}>
-                        Size: {item.selectedSize} | Color: {item.selectedColor}{" "}
-                        | Quantity: {item.quantity}
-                      </Text>
-                      <TouchableOpacity
-                        onPress={() => removeFromCart(item.id)}
-                        style={styles.removeButton}
-                      >
-                        <Text style={styles.removeButtonText}>Remove</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                ))}
-                <View style={styles.totalContainer}>
-                  <Text style={styles.totalText}>
-                    Total: ₨ {totalAmount.toFixed(2)}
-                  </Text>
-                </View>
-              </>
-            )}
-            {cartItems.length > 0 && (
-              <TouchableOpacity
-                style={styles.checkoutButton}
-                onPress={() =>
-                  navigation.navigate("CheckOut", {
-                    user: user,
-                    cartItems: cartItems,
-                  })
-                }
-              >
-                <Text style={styles.checkoutButtonText}>Checkout</Text>
-              </TouchableOpacity>
-            )}
-          </ScrollView>
-        )}
-      </Stack.Screen>
+      <Stack.Screen 
+        name="Cart " 
+        component={CartContent}
+        options={{
+          headerShown: true,
+          headerLeft: () => null, // This removes the back button
+          headerRight: () => (
+            <TouchableOpacity
+              style={styles.headerIcon}
+              onPress={() => navigation.navigate("OrderHistory", { userId: user._id })}
+            >
+              <Ionicons name="receipt-outline" size={24} color="#3498db" />
+            </TouchableOpacity>
+          ),
+          headerStyle: {
+            elevation: 0,
+            shadowOpacity: 0,
+            backgroundColor: '#fff',
+          },
+          headerTitleStyle: {
+            fontWeight: 'bold',
+            color: '#2c3e50',
+          },
+          gestureEnabled: false // Disables the iOS swipe-back gesture
+        }}
+      />
 
-      {/* Checkout Screen */}
-      <Stack.Screen name="CheckOut" options={{ headerShown: false }}>
-        {() => (
+      <Stack.Screen 
+        name="CheckOut"
+        options={{ 
+          headerShown: true,
+          headerStyle: {
+            elevation: 0,
+            shadowOpacity: 0,
+            backgroundColor: '#fff',
+          },
+          headerTitleStyle: {
+            fontWeight: 'bold',
+            color: '#2c3e50',
+          },
+        }}
+      >
+        {(props) => (
           <CheckOutScreen
+            {...props}
             user={user}
             cartItems={cartItems}
-            navigation={navigation}
           />
         )}
       </Stack.Screen>
+
+      <Stack.Screen 
+        name="OrderHistory"
+        component={OrderHistoryScreen}
+        options={{ 
+          title: 'Order History',
+          headerStyle: {
+            elevation: 0,
+            shadowOpacity: 0,
+            backgroundColor: '#fff',
+          },
+          headerTitleStyle: {
+            fontWeight: 'bold',
+            color: '#2c3e50',
+          },
+        }}
+      />
     </Stack.Navigator>
   );
 };
@@ -108,10 +162,15 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: "#f8f9fa",
   },
+  headerIcon: {
+    marginRight: 15,
+    padding: 8,
+  },
   emptyContainer: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    flex: 1,
+    marginTop: 50,
   },
   emptyIcon: {
     width: 150,
@@ -157,26 +216,10 @@ const styles = StyleSheet.create({
     color: "#27ae60",
     marginBottom: 10,
   },
-  quantityContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 10,
-  },
-  quantityButton: {
-    backgroundColor: "#ecf0f1",
-    borderRadius: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    marginHorizontal: 5,
-  },
-  quantityButtonText: {
-    fontSize: 18,
+  selectedDetails: {
+    fontSize: 16,
     color: "#7f8c8d",
-  },
-  quantityText: {
-    fontSize: 18,
-    color: "#34495e",
-    fontWeight: "bold",
+    marginBottom: 5,
   },
   removeButton: {
     backgroundColor: "#e74c3c",
@@ -193,6 +236,14 @@ const styles = StyleSheet.create({
   totalContainer: {
     alignItems: "center",
     marginVertical: 20,
+    backgroundColor: "#fff",
+    padding: 15,
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 3,
   },
   totalText: {
     fontSize: 24,
@@ -216,11 +267,6 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 18,
     fontWeight: "bold",
-  },
-  selectedDetails: {
-    fontSize: 16,
-    color: "#7f8c8d",
-    marginBottom: 5,
   },
 });
 

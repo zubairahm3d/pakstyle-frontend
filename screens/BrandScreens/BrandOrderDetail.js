@@ -112,7 +112,7 @@ const BrandOrderDetail = ({ route }) => {
         <Text style={styles.orderTitle}>Order Overview</Text>
         <Text style={styles.orderDetail}>Order ID: {order.orderId}</Text>
         <Text style={styles.orderDetail}>
-          Total Amount: ${order.totalPrice.toFixed(2)}
+          Total Amount: Rs. {order.totalPrice.toFixed(2)}
         </Text>
         <Text style={styles.orderDetail}>Order Date: {order.date}</Text>
         <Text style={styles.orderDetail}>
@@ -158,7 +158,7 @@ const BrandOrderDetail = ({ route }) => {
               <View style={styles.itemDetailRow}>
                 <Text style={styles.label}>Price:</Text>
                 <Text style={styles.itemDetail}>
-                  ${(order.totalPrice / itemDetails.quantity).toFixed(2)}
+                  Rs.{(order.totalPrice / itemDetails.quantity).toFixed(2)}
                 </Text>
               </View>
             </View>

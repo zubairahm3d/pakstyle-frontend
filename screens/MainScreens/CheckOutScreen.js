@@ -1,273 +1,413 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
+  ScrollView,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
   TouchableOpacity,
   TextInput,
-  Alert,
-  ScrollView,
-} from "react-native";
-import { RadioButton } from "react-native-paper";
-import { CartContext } from "../Context/CartContext";
-import { API_URL } from "@env";
+  StyleSheet,
+  ActivityIndicator,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { CardField, useStripe } from '@stripe/stripe-react-native';
+import { CartContext } from '../Context/CartContext';
+import { API_URL } from '@env';
 
-const CheckOutScreen = ({ user, navigation, cartItems }) => {
-  const [selectedPaymentMethod, setSelectedPaymentMethod] =
-    useState("Credit Card");
-  const [creditCardDetails, setCreditCardDetails] = useState({
-    cardNumber: "",
-    expiryDate: "",
-    cvv: "",
-  });
+const PAYMENT_METHODS = [
+  { id: 'credit_card', label: 'Credit Card' },
+  { id: 'cash_on_delivery', label: 'Cash on Delivery' },
+];
 
-  const [shippingAddress, setShippingAddress] = useState({
-    street: "",
-    city: "",
-    state: "",
-    country: "",
-    zipCode: "",
-  });
-
+const CheckOutScreen = ({ navigation, route }) => {
+  const stripe = useStripe();
+  const { user, cartItems } = route.params || {};
   const { removeAllItems } = useContext(CartContext);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('credit_card');
+  const [isLoading, setIsLoading] = useState(false);
+  const [cardComplete, setCardComplete] = useState(false);
+  const [shippingAddress, setShippingAddress] = useState({
+    street: '',
+    city: '',
+    state: '',
+    country: '',
+    zipCode: '',
+  });
+  const [errors, setErrors] = useState({});
+  const [cardDetails, setCardDetails] = useState(null);
 
-  const handlePayment = () => {
-    const totalPrice = cartItems.reduce(
-      (total, item) => total + item.price * item.quantity,
-      0
+  if (!user || !cartItems) {
+    return (
+      <View style={styles.container}>
+        <Text>Error: Missing user or cart data</Text>
+      </View>
     );
+  }
 
-    const order = {
-      userId: user._id,
-      totalPrice: totalPrice,
-      orderDate: new Date(),
-      status: "Pending",
-      shippingAddress: shippingAddress,
-      paymentMethod: selectedPaymentMethod,
-      items: cartItems.map((item) => ({
-        productId: item._id,
-        brandId: item.brandId,
-        quantity: item.quantity,
-        color: item.selectedColor,
-        size: item.selectedSize,
-      })),
-    };
+  const totalPrice = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
 
-    console.log("Order Data: ", order);
+  const validateForm = () => {
+    const newErrors = {};
+
+    // Only validate shipping address
+    Object.keys(shippingAddress).forEach(key => {
+      if (!shippingAddress[key].trim()) {
+        newErrors[key] = `${key.charAt(0).toUpperCase() + key.slice(1)} is required`;
+      }
+    });
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // Update the processPayment function in CheckOutScreen.js
+// Update the processPayment function in CheckOutScreen.js
+const processPayment = async () => {
+  if (!validateForm()) {
+    return;
+  }
+
+  if (!user?._id) {
+    Alert.alert(
+      'Error',
+      'User information is missing. Please try logging in again.',
+      [{ text: 'OK' }]
+    );
+    return;
+  }
+
+  if (totalPrice < 150) {
+    Alert.alert(
+      'Invalid Amount',
+      'Order total must be at least 150 PKR',
+      [{ text: 'OK' }]
+    );
+    return;
+  }
+
+  // For credit card payment, ensure card details are complete
+  if (selectedPaymentMethod === 'credit_card' && !cardComplete) {
+    Alert.alert(
+      'Invalid Card',
+      'Please enter valid card details',
+      [{ text: 'OK' }]
+    );
+    return;
+  }
+
+  setIsLoading(true);
+  try {
+    // Create the order first
+    const orderResponse = await fetch(`${API_URL}/orders`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId: user._id,
+        totalPrice,
+        paymentMethod: selectedPaymentMethod,
+        shippingAddress,
+        items: cartItems.map(item => ({
+          productId: item._id,
+          quantity: item.quantity,
+          price: item.price,
+          name: item.name,
+        })),
+      }),
+    });
+
+    if (!orderResponse.ok) {
+      const errorData = await orderResponse.json();
+      throw new Error(errorData.error || 'Failed to create order');
+    }
+
+    const orderData = await orderResponse.json();
+
+    // Handle payment confirmation for credit card
+    if (selectedPaymentMethod === 'credit_card' && orderData.paymentIntent) {
+      const { error: paymentError } = await stripe.confirmPayment(
+        orderData.paymentIntent.clientSecret,
+        {
+          paymentMethodType: 'Card',
+          paymentMethodData: {
+            billingDetails: {
+              address: {
+                city: shippingAddress.city,
+                country: shippingAddress.country,
+                line1: shippingAddress.street,
+                postalCode: shippingAddress.zipCode,
+                state: shippingAddress.state,
+              },
+            },
+          },
+        }
+      );
+
+      if (paymentError) {
+        throw new Error(paymentError.message);
+      }
+    }
+
+    // Success handling
+    removeAllItems();
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Cart' }],
+    });
 
     Alert.alert(
-      "Confirm Payment",
-      "Are you sure you want to proceed with the payment?",
+      'Order Placed Successfully',
+      'Thank you for your purchase! You can track your order in the Profile section.',
+      [{ text: 'OK' }]
+    );
+  } catch (error) {
+    console.error('Payment Error:', error);
+    Alert.alert(
+      'Error',
+      error.message || 'Failed to process order. Please try again.',
+      [{ text: 'OK' }]
+    );
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+  const handlePayment = () => {
+    Alert.alert(
+      'Confirm Order',
+      `Total Amount: Rs. ${totalPrice.toLocaleString()}\nPayment Method: ${
+        PAYMENT_METHODS.find(method => method.id === selectedPaymentMethod)?.label
+      }`,
       [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Proceed",
-          onPress: async () => {
-            try {
-              console.log(`IP: ${API_URL}/orders`);
-              const response = await fetch(`${API_URL}/orders`, {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify(order),
-              });
-
-              if (!response.ok) {
-                throw new Error("Network response was not ok");
-              }
-
-              const data = await response.json();
-              console.log("Order successfully created:", data);
-              removeAllItems();
-              navigation.navigate("Cart");
-            } catch (error) {
-              console.error("Error:", error);
-              Alert.alert(
-                "Error",
-                "There was a problem processing your order. Please try again."
-              );
-            }
-          },
-        },
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Place Order', onPress: processPayment }
       ]
     );
   };
 
-  const handleBack = () => {
-    navigation.navigate("Cart");
-  };
+  const renderShippingForm = () => (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>Shipping Address</Text>
+      <View style={styles.inputContainer}>
+        {Object.keys(shippingAddress).map((field) => (
+          <View key={field}>
+            <TextInput
+              style={[styles.input, errors[field] && styles.inputError]}
+              placeholder={field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, ' $1')}
+              value={shippingAddress[field]}
+              onChangeText={(text) => {
+                setShippingAddress({...shippingAddress, [field]: text});
+                if (errors[field]) {
+                  setErrors({...errors, [field]: null});
+                }
+              }}
+            />
+            {errors[field] && <Text style={styles.errorText}>{errors[field]}</Text>}
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+
+  const renderPaymentMethods = () => (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>Payment Method</Text>
+      <View style={styles.paymentMethodContainer}>
+        {PAYMENT_METHODS.map((method) => (
+          <TouchableOpacity
+            key={method.id}
+            style={[
+              styles.paymentMethodItem,
+              selectedPaymentMethod === method.id && styles.selectedPaymentMethod
+            ]}
+            onPress={() => setSelectedPaymentMethod(method.id)}
+          >
+            <Text style={styles.paymentMethodLabel}>{method.label}</Text>
+            {selectedPaymentMethod === method.id && (
+              <Ionicons name="checkmark-circle" size={24} color="#0ea5e9" />
+            )}
+          </TouchableOpacity>
+        ))}
+      </View>
+    </View>
+  );
+
+  const renderCardForm = () => selectedPaymentMethod === 'credit_card' && (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>Card Details</Text>
+      <CardField
+        postalCodeEnabled={true}
+        placeholder={{
+          number: '4242 4242 4242 4242',
+        }}
+        cardStyle={{
+          backgroundColor: '#FFFFFF',
+          textColor: '#000000',
+        }}
+        style={styles.cardField}
+        onCardChange={(cardDetails) => {
+          setCardComplete(cardDetails.complete);
+          setCardDetails(cardDetails);
+          if (errors.card) {
+            setErrors({...errors, card: null});
+          }
+        }}
+      />
+      {!cardComplete && (
+        <Text style={styles.helperText}>
+          Test Card: 4242 4242 4242 4242, Any future date, Any 3 digits
+        </Text>
+      )}
+      {errors.card && <Text style={styles.errorText}>{errors.card}</Text>}
+    </View>
+  );
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-        <Text style={styles.backButtonText}>Back</Text>
-      </TouchableOpacity>
-
-      <Text style={styles.title}>Checkout</Text>
-
-      {/* Payment Method Selection */}
-      <RadioButton.Group
-        onValueChange={(value) => setSelectedPaymentMethod(value)}
-        value={selectedPaymentMethod}
-      >
-        <View style={styles.optionContainer}>
-          <RadioButton.Item label="Credit Card" value="Credit Card" />
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={styles.container}
+    >
+      <ScrollView bounces={false}>
+        <View style={styles.header}>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={() => navigation.goBack()}
+            disabled={isLoading}
+          >
+            <Ionicons name="arrow-back" size={24} color="#333" />
+          </TouchableOpacity>
+          <Text style={styles.title}>Checkout</Text>
         </View>
-        <View style={styles.optionContainer}>
-          <RadioButton.Item label="Cash on Delivery" value="Cash on Delivery" />
-        </View>
-        <View style={styles.optionContainer}>
-          <RadioButton.Item label="JazzCash" value="JazzCash" />
-        </View>
-        <View style={styles.optionContainer}>
-          <RadioButton.Item label="EasyPaisa" value="EasyPaisa" />
-        </View>
-      </RadioButton.Group>
 
-      {/* Credit Card Details */}
-      {selectedPaymentMethod === "Credit Card" && (
-        <View style={styles.cardDetailsContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Card Number"
-            keyboardType="numeric"
-            onChangeText={(text) =>
-              setCreditCardDetails({ ...creditCardDetails, cardNumber: text })
-            }
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Expiry Date (MM/YY)"
-            keyboardType="numeric"
-            onChangeText={(text) =>
-              setCreditCardDetails({ ...creditCardDetails, expiryDate: text })
-            }
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="CVV"
-            keyboardType="numeric"
-            onChangeText={(text) =>
-              setCreditCardDetails({ ...creditCardDetails, cvv: text })
-            }
-          />
+        <View style={styles.content}>
+          {renderShippingForm()}
+          {renderPaymentMethods()}
+          {renderCardForm()}
+
+          <View style={styles.totalContainer}>
+            <Text style={styles.totalText}>Total: Rs. {totalPrice.toLocaleString()}</Text>
+          </View>
+
+          <TouchableOpacity
+            style={[styles.button, isLoading && styles.disabledButton]}
+            onPress={handlePayment}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>Place Order</Text>
+            )}
+          </TouchableOpacity>
         </View>
-      )}
-
-      {/* Shipping Address Inputs */}
-      <Text style={styles.label}>Shipping Address:</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Street"
-        onChangeText={(text) =>
-          setShippingAddress({ ...shippingAddress, street: text })
-        }
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="City"
-        onChangeText={(text) =>
-          setShippingAddress({ ...shippingAddress, city: text })
-        }
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="State"
-        onChangeText={(text) =>
-          setShippingAddress({ ...shippingAddress, state: text })
-        }
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Country"
-        onChangeText={(text) =>
-          setShippingAddress({ ...shippingAddress, country: text })
-        }
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Zip Code"
-        keyboardType="numeric"
-        onChangeText={(text) =>
-          setShippingAddress({ ...shippingAddress, zipCode: text })
-        }
-      />
-
-      <TouchableOpacity style={styles.button} onPress={handlePayment}>
-        <Text style={styles.buttonText}>Proceed</Text>
-      </TouchableOpacity>
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1,
-    padding: 20,
-    backgroundColor: "#f9f9f9",
+    flex: 1,
+    backgroundColor: '#f5f5f5',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 20,
-    textAlign: "center",
-  },
-  optionContainer: {
-    marginVertical: 10,
-  },
-  cardDetailsContainer: {
-    width: "100%",
-    marginBottom: 20,
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    padding: 15,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  input: {
-    height: 50,
-    borderColor: "#ccc",
-    borderWidth: 1,
-    borderRadius: 10,
-    marginBottom: 15,
-    paddingHorizontal: 15,
-    fontSize: 16,
-    backgroundColor: "#fff",
-  },
-  button: {
-    backgroundColor: "#007bff",
-    paddingVertical: 15,
-    borderRadius: 10,
-    alignItems: "center",
-    marginTop: 20,
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "bold",
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
   },
   backButton: {
-    position: "absolute",
-    top: 20,
-    left: 20,
+    marginRight: 16,
   },
-  backButtonText: {
-    fontSize: 16,
-    color: "#007bff",
+  title: {
+    fontSize: 20,
+    fontWeight: 'bold',
   },
-  label: {
+  content: {
+    padding: 16,
+  },
+  section: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  inputContainer: {
+    marginBottom: 8,
+  },
+  input: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 8,
+  },
+  inputError: {
+    borderColor: '#dc2626',
+  },
+  errorText: {
+    color: '#dc2626',
+    fontSize: 12,
+    marginBottom: 8,
+    marginTop: -4,
+  },
+  paymentMethodContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  cardField: {
+    width: '100%',
+    height: 50,
+    marginVertical: 8,
+  },
+  totalContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 24,
+  },
+  totalText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  button: {
+    backgroundColor: '#0ea5e9',
+    borderRadius: 8,
+    padding: 16,
+    alignItems: 'center',
+  },
+  disabledButton: {
+    opacity: 0.5,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  paymentMethodItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 8,
+  },
+  selectedPaymentMethod: {
+    borderColor: '#0ea5e9',
+    borderWidth: 2,
+  },
+  paymentMethodLabel: {
     fontSize: 16,
-    fontWeight: "bold",
-    marginVertical: 10,
-    color: "#555",
   },
 });
 

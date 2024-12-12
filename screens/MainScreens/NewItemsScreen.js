@@ -6,20 +6,39 @@ import {
   Image,
   FlatList,
   TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
-import clothesData from "../../data/clothesData.json";
 import { useNavigation } from "@react-navigation/native";
+import { API_URL } from "@env";
 
 const NewItemsScreen = () => {
-  const [sortedClothes, setSortedClothes] = useState([]);
+  const [clothes, setClothes] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const navigation = useNavigation();
 
   useEffect(() => {
-    const dataCopy = [...clothesData];
-
-    const sortedData = dataCopy.sort((a, b) => b.id - a.id);
-    setSortedClothes(sortedData);
+    fetchClothes();
   }, []);
+
+  const fetchClothes = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await fetch(`${API_URL}/products`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch products");
+      }
+      const data = await response.json();
+      const sortedData = data.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+      setClothes(sortedData);
+    } catch (err) {
+      setError("An error occurred while fetching products. Please try again.");
+      console.error("Fetch error:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const navigateToItemScreen = (item) => {
     navigation.navigate("ItemScreen", { item });
@@ -30,19 +49,36 @@ const NewItemsScreen = () => {
       style={styles.itemContainer}
       onPress={() => navigateToItemScreen(item)}
     >
-      <Image source={{ uri: item.image }} style={styles.image} />
+      <Image source={{ uri: item.images[0] }} style={styles.image} />
       <Text style={styles.name}>{item.name}</Text>
       <Text style={styles.description}>{item.description}</Text>
-      <Text style={styles.price}>{item.price}</Text>
-      <Text style={styles.brand}>Brand: {item.brand}</Text>
+      <Text style={styles.price}>Rs. {item.price}</Text>
+      <Text style={styles.brand}>Brand: {item.brandName}</Text>
+      {/* <Text style={styles.updatedAt}>Updated: {new Date(item.updatedAt).toLocaleDateString()}</Text> */}
     </TouchableOpacity>
   );
 
+  if (isLoading) {
+    return (
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.centerContainer}>
+        <Text style={styles.errorText}>{error}</Text>
+      </View>
+    );
+  }
+
   return (
     <FlatList
-      data={sortedClothes}
+      data={clothes}
       renderItem={renderItem}
-      keyExtractor={(item) => item.id.toString()}
+      keyExtractor={(item) => item._id.toString()}
       contentContainerStyle={styles.container}
     />
   );
@@ -51,6 +87,11 @@ const NewItemsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     padding: 10,
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   itemContainer: {
     marginBottom: 20,
@@ -87,6 +128,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontStyle: "italic",
   },
+  updatedAt: {
+    fontSize: 12,
+    color: "#888",
+    marginTop: 5,
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 16,
+    textAlign: 'center',
+  },
 });
 
 export default NewItemsScreen;
+

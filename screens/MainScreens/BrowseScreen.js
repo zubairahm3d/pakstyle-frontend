@@ -6,15 +6,15 @@ import {
   Image,
   TouchableOpacity,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { createDrawerNavigator } from "@react-navigation/drawer";
 import { API_URL } from "@env";
-import { ColorSpace } from "react-native-reanimated";
 
 const Drawer = createDrawerNavigator();
 
-const SidebarContent = ({ setSelectedBrands, selectedBrands, brands }) => {
+const SidebarContent = ({ setSelectedBrands, selectedBrands, brands, setSortOption, sortOption, setSortOrder, sortOrder }) => {
   const handleBrandSelection = (brand) => {
     setSelectedBrands((prevBrands) => {
       const updatedSelection = prevBrands.includes(brand)
@@ -22,6 +22,15 @@ const SidebarContent = ({ setSelectedBrands, selectedBrands, brands }) => {
         : [...prevBrands, brand];
       return updatedSelection;
     });
+  };
+
+  const handleSortOptionChange = (option) => {
+    if (sortOption === option) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortOption(option);
+      setSortOrder('desc');
+    }
   };
 
   return (
@@ -46,49 +55,65 @@ const SidebarContent = ({ setSelectedBrands, selectedBrands, brands }) => {
           </Text>
         </TouchableOpacity>
       ))}
-      {/* Sorting options */}
       <Text style={styles.sidebarHeading}>Sort by:</Text>
-      <TouchableOpacity style={styles.sortOption}>
-        <Text style={styles.sortOptionText}>Popularity</Text>
+      <TouchableOpacity 
+        style={[styles.sortOption, sortOption === 'popularity' && styles.selectedSortOption]} 
+        onPress={() => handleSortOptionChange('popularity')}
+      >
+        <Text style={styles.sortOptionText}>
+          Popularity {sortOption === 'popularity' && (sortOrder === 'asc' ? '↑' : '↓')}
+        </Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.sortOption}>
-        <Text style={styles.sortOptionText}>Price: Low to High</Text>
+      <TouchableOpacity 
+        style={[styles.sortOption, sortOption === 'price' && styles.selectedSortOption]} 
+        onPress={() => handleSortOptionChange('price')}
+      >
+        <Text style={styles.sortOptionText}>
+          Price {sortOption === 'price' && (sortOrder === 'asc' ? '↑' : '↓')}
+        </Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.sortOption}>
-        <Text style={styles.sortOptionText}>Price: High to Low</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.sortOption}>
-        <Text style={styles.sortOptionText}>New Arrivals</Text>
+      <TouchableOpacity 
+        style={[styles.sortOption, sortOption === 'newest' && styles.selectedSortOption]} 
+        onPress={() => handleSortOptionChange('newest')}
+      >
+        <Text style={styles.sortOptionText}>
+          Newest {sortOption === 'newest' && (sortOrder === 'asc' ? '↑' : '↓')}
+        </Text>
       </TouchableOpacity>
     </View>
   );
 };
 
-const BrowseScreen = (user) => {
+const BrowseScreen = ({ user }) => {
   const [clothes, setClothes] = useState([]);
   const [selectedBrands, setSelectedBrands] = useState([]);
   const [brands, setBrands] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [sortOption, setSortOption] = useState('popularity');
+  const [sortOrder, setSortOrder] = useState('desc');
   const navigation = useNavigation();
 
   const fetchBrandsAndProducts = async () => {
     try {
+      setIsLoading(true);
+      setError(null);
       const usersResponse = await fetch(`${API_URL}/users/`);
       const usersData = await usersResponse.json();
 
-      // Filter for userType: "brand" and get their names
       const brandUsers = usersData.filter((user) => user.userType === "brand");
       const brandNames = brandUsers.map((user) => user.name);
       setBrands(brandNames);
 
-      // Fetch products
-      // console.log(`IP: ${API_URL}/products`);
       const productsResponse = await fetch(`${API_URL}/products`);
       const productsData = await productsResponse.json();
-      // console.log(productsData);
 
-      setClothes(productsData); // Store all products initially
+      setClothes(productsData);
     } catch (error) {
       console.error("Error fetching data: ", error);
+      setError("Failed to fetch data. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -102,11 +127,54 @@ const BrowseScreen = (user) => {
     navigation.navigate("ItemScreen", { item, user });
   };
 
-  // Filter clothes based on selected brands
-  const filteredClothes =
-    selectedBrands.length === 0
+  const filteredClothes = React.useMemo(() => {
+    if (!Array.isArray(clothes)) return [];
+    let filtered = selectedBrands.length === 0
       ? clothes
-      : clothes.filter((item) => selectedBrands.includes(item.brandName)); // Filter by brandName
+      : clothes.filter((item) => selectedBrands.includes(item.brandName));
+
+    return filtered.sort((a, b) => {
+      if (sortOption === 'price') {
+        return sortOrder === 'asc' ? a.price - b.price : b.price - a.price;
+      } else if (sortOption === 'popularity') {
+        return sortOrder === 'asc' ? a.popularity - b.popularity : b.popularity - a.popularity;
+      } else if (sortOption === 'newest') {
+        return sortOrder === 'asc' 
+          ? new Date(a.updatedAt) - new Date(b.updatedAt) 
+          : new Date(b.updatedAt) - new Date(a.updatedAt);
+      }
+      return 0;
+    });
+  }, [clothes, selectedBrands, sortOption, sortOrder]);
+
+  const renderContent = () => {
+    if (isLoading) {
+      return <ActivityIndicator size="large" color="#0000ff" />;
+    }
+
+    if (error) {
+      return <Text style={styles.errorText}>{error}</Text>;
+    }
+
+    if (filteredClothes.length === 0) {
+      return <Text style={styles.noProductsText}>No products available.</Text>;
+    }
+
+    return filteredClothes.map((item) => (
+      <TouchableOpacity
+        key={item._id}
+        style={styles.itemContainer}
+        onPress={() => handleItemPress(item)}
+      >
+        <Image style={styles.image} source={{ uri: item.images[0] }} />
+        <Text style={styles.name}>{item.name}</Text>
+        <Text style={styles.description}>{item.description}</Text>
+        <Text style={styles.price}>Rs. {item.price}</Text>
+        <Text style={styles.brand}>Brand: {item.brandName}</Text>
+        <Text style={styles.updatedAt}>Updated: {new Date(item.updatedAt).toLocaleDateString()}</Text>
+      </TouchableOpacity>
+    ));
+  };
 
   return (
     <Drawer.Navigator
@@ -116,32 +184,17 @@ const BrowseScreen = (user) => {
           setSelectedBrands={setSelectedBrands}
           selectedBrands={selectedBrands}
           brands={brands}
+          setSortOption={setSortOption}
+          sortOption={sortOption}
+          setSortOrder={setSortOrder}
+          sortOrder={sortOrder}
         />
       )}
     >
-      <Drawer.Screen name="Browse">
+      <Drawer.Screen name="Browse ">
         {() => (
           <ScrollView contentContainerStyle={styles.container}>
-            {filteredClothes.length === 0 ? (
-              <Text>No products available.</Text>
-            ) : (
-              filteredClothes.map((item) => (
-                <TouchableOpacity
-                  key={item._id}
-                  style={styles.itemContainer}
-                  onPress={() => handleItemPress(item)}
-                >
-                  <Image
-                    style={styles.image}
-                    source={{ uri: item.images[0] }}
-                  />
-                  <Text style={styles.name}>{item.name}</Text>
-                  <Text style={styles.description}>{item.description}</Text>
-                  <Text style={styles.price}>Rs. {item.price}</Text>
-                  <Text style={styles.brand}>Brand: {item.brandName}</Text>
-                </TouchableOpacity>
-              ))
-            )}
+            {renderContent()}
           </ScrollView>
         )}
       </Drawer.Screen>
@@ -192,6 +245,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontStyle: "italic",
     color: "#95a5a6",
+    marginBottom: 5,
+  },
+  updatedAt: {
+    fontSize: 12,
+    color: "#bdc3c7",
   },
   sidebarContainer: {
     flex: 1,
@@ -236,6 +294,22 @@ const styles = StyleSheet.create({
   sortOptionText: {
     color: "#2c3e50",
   },
+  errorText: {
+    color: "red",
+    fontSize: 16,
+    textAlign: "center",
+    marginTop: 20,
+  },
+  noProductsText: {
+    fontSize: 16,
+    textAlign: "center",
+    marginTop: 20,
+  },
+  selectedSortOption: {
+    backgroundColor: '#3498db',
+    borderColor: '#2980b9',
+  },
 });
 
 export default BrowseScreen;
+

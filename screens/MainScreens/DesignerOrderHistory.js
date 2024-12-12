@@ -26,6 +26,47 @@ const DesignerOrderHistory = () => {
   const [refreshing, setRefreshing] = useState(false);
   const navigation = useNavigation();
 
+  // Value formatting helpers
+  const formatPaymentMethod = (method) => {
+    const paymentMethods = {
+      'cod': 'Cash on Delivery',
+      'card': 'Credit/Debit Card',
+      'mobileMoney': 'JazzCash/Easypaisa'
+    };
+    return paymentMethods[method] || method;
+  };
+
+  const formatDeliveryPreference = (preference) => {
+    const deliveryPreferences = {
+      'homeDelivery': 'Home Delivery',
+      'pickup': 'Pickup from Store'
+    };
+    return deliveryPreferences[preference] || preference;
+  };
+
+  const formatGarmentType = (type) => {
+    const garmentTypes = {
+      'shalwarKameez': 'Shalwar Kameez',
+      'kurtaPajama': 'Kurta Pajama',
+      'sherwani': 'Sherwani',
+      'waistcoat': 'Waistcoat'
+    };
+    return garmentTypes[type] || type;
+  };
+
+  const formatOrderData = (orderData) => {
+    if (!orderData) return null;
+    
+    return {
+      ...orderData,
+      // Format the values
+      paymentMethod: formatPaymentMethod(orderData.paymentMethod),
+      deliveryPreference: formatDeliveryPreference(orderData.deliveryPreference),
+      garmentType: formatGarmentType(orderData.garmentType),
+      // Add formatted value for any other fields that need it
+    };
+  };
+
   const fetchOrders = async () => {
     if (!user || !user._id) {
       setError('User information is missing');
@@ -34,7 +75,7 @@ const DesignerOrderHistory = () => {
     }
 
     try {
-      const response = await fetch(`${API_URL}/custom-orders`);
+      const response = await fetch(`${API_URL}/custom-orders?userId=${user._id}`);
       
       if (!response.ok) {
         throw new Error(`Failed to fetch orders. Status: ${response.status}`);
@@ -42,11 +83,14 @@ const DesignerOrderHistory = () => {
       
       const data = await response.json();
       
-      let ordersArray = Array.isArray(data) ? data : (data.data && Array.isArray(data.data) ? data.data : []);
+      const ordersArray = Array.isArray(data) ? data : (data.data && Array.isArray(data.data) ? data.data : []);
       
-      const userOrders = ordersArray.filter(order => order?.userId === user._id);
+      // Format each order's data
+      const formattedOrders = ordersArray.map(formatOrderData).filter(Boolean);
       
-      setOrders(userOrders);
+      console.log(`Fetched ${formattedOrders.length} orders for designer:`, user._id);
+      
+      setOrders(formattedOrders);
       setError(null);
     } catch (err) {
       console.error('Error in fetchOrders:', err);
@@ -67,14 +111,28 @@ const DesignerOrderHistory = () => {
   };
 
   const getStatusColor = (status) => {
-    switch (status) {
-      case 'pending': return '#FFA500';
-      case 'confirmed': return '#4CAF50';
-      case 'inProgress': return '#2196F3';
-      case 'completed': return '#4CAF50';
-      case 'cancelled': return '#F44336';
-      default: return '#757575';
-    }
+    const statusColors = {
+      'pending': '#FFA500',
+      'confirmed': '#4CAF50',
+      'inProgress': '#2196F3',
+      'completed': '#4CAF50',
+      'cancelled': '#F44336'
+    };
+    return statusColors[status?.toLowerCase()] || '#757575';
+  };
+
+  const getStatusText = (status) => {
+    if (!status) return 'N/A';
+    
+    const statusTexts = {
+      'pending': 'Pending',
+      'confirmed': 'Confirmed',
+      'inProgress': 'In Progress',
+      'completed': 'Completed',
+      'cancelled': 'Cancelled'
+    };
+    
+    return statusTexts[status] || status;
   };
 
   const renderOrderItem = ({ item }) => (
@@ -85,18 +143,36 @@ const DesignerOrderHistory = () => {
       <View style={styles.orderHeader}>
         <Text style={styles.orderId}>{item.customOrderId ?? 'N/A'}</Text>
         <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-          <Text style={styles.statusText}>{item.status ?? 'N/A'}</Text>
+          <Text style={styles.statusText}>{getStatusText(item.status)}</Text>
         </View>
       </View>
+      
       <View style={styles.orderBody}>
-        <Ionicons name="shirt-outline" size={24} color="#666" style={styles.icon} />
-        <Text style={styles.orderDetail}>{item.garmentType ?? 'N/A'}</Text>
+        <View style={styles.infoRow}>
+          <Ionicons name="shirt-outline" size={24} color="#666" style={styles.icon} />
+          <Text style={styles.orderDetail}>{item.garmentType ?? 'N/A'}</Text>
+        </View>
+        
+        <View style={styles.infoRow}>
+          <Ionicons name="person-outline" size={20} color="#666" style={styles.icon} />
+          <Text style={styles.customerName}>{item.fullName ?? 'N/A'}</Text>
+        </View>
       </View>
+
       <View style={styles.orderFooter}>
-        <Ionicons name="calendar-outline" size={18} color="#666" style={styles.icon} />
-        <Text style={styles.orderDate}>
-          {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : 'N/A'}
-        </Text>
+        <View style={styles.infoRow}>
+          <Ionicons name="calendar-outline" size={18} color="#666" style={styles.icon} />
+          <Text style={styles.orderDate}>
+            Created: {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : 'N/A'}
+          </Text>
+        </View>
+        
+        <View style={styles.infoRow}>
+          <Ionicons name="time-outline" size={18} color="#666" style={styles.icon} />
+          <Text style={styles.consultationDate}>
+            Consultation: {item.consultationDate ? new Date(item.consultationDate).toLocaleDateString() : 'N/A'}
+          </Text>
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -130,6 +206,7 @@ const DesignerOrderHistory = () => {
         <View style={styles.emptyState}>
           <Ionicons name="document-text-outline" size={64} color="#ccc" />
           <Text style={styles.noOrdersText}>No orders found</Text>
+          <Text style={styles.noOrdersSubText}>New orders will appear here</Text>
         </View>
       ) : (
         <FlatList
@@ -145,6 +222,9 @@ const DesignerOrderHistory = () => {
     </SafeAreaView>
   );
 };
+
+
+
 
 const styles = StyleSheet.create({
   container: {
@@ -185,7 +265,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: height * 0.01,
+    marginBottom: height * 0.015,
   },
   orderId: {
     fontSize: width * 0.04,
@@ -203,42 +283,67 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   orderBody: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: height * 0.01,
+    marginBottom: height * 0.015,
   },
-  orderFooter: {
+  infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: height * 0.008,
   },
   orderDetail: {
     fontSize: width * 0.04,
     color: '#666',
     marginLeft: width * 0.02,
+    textTransform: 'capitalize',
+  },
+  customerName: {
+    fontSize: width * 0.04,
+    color: '#666',
+    marginLeft: width * 0.02,
+    fontWeight: '500',
+  },
+  orderFooter: {
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+    paddingTop: height * 0.01,
   },
   orderDate: {
     fontSize: width * 0.035,
     color: '#666',
     marginLeft: width * 0.02,
   },
+  consultationDate: {
+    fontSize: width * 0.035,
+    color: '#666',
+    marginLeft: width * 0.02,
+  },
   icon: {
-    marginRight: width * 0.02,
+    marginRight: width * 0.01,
   },
   emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: width * 0.1,
   },
   noOrdersText: {
-    fontSize: width * 0.04,
+    fontSize: width * 0.045,
     color: '#666',
     marginTop: height * 0.02,
+    textAlign: 'center',
+  },
+  noOrdersSubText: {
+    fontSize: width * 0.035,
+    color: '#999',
+    marginTop: height * 0.01,
+    textAlign: 'center',
   },
   errorText: {
     fontSize: width * 0.04,
     color: '#ef4444',
     textAlign: 'center',
     marginBottom: height * 0.02,
+    paddingHorizontal: width * 0.1,
   },
   retryButton: {
     backgroundColor: '#0ea5e9',
